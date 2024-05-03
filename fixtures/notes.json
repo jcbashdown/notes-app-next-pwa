@@ -1,0 +1,55 @@
+[
+    {
+        "id": "f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This is the root note",
+        "children": [
+            {
+                "id": "a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "+"
+            },
+            {
+                "id": "1a2b3c4d-5e6f-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "-"
+            }
+        ],
+        "parents": []
+    },
+    {
+        "id": "a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This note supports the root note",
+        "children": [
+            {
+                "id": "a0b1c2d3-e4f5-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": ""
+            }
+        ],
+        "parents": [
+            {
+                "id": "f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "+"
+            }
+        ]
+    },
+    {
+        "id": "1a2b3c4d-5e6f-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This note opposes the root note",
+        "children": [],
+        "parents": [
+            {
+                "id": "f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "-"
+            }
+        ]
+    },
+    {
+        "id": "a0b1c2d3-e4f5-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This note is related to note 2",
+        "children": [],
+        "parents": [
+            {
+                "id": "a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": ""
+            }
+        ]
+    }
+]

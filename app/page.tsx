@@ -1,15 +1,15 @@
 'use client'
 import styles from '@/styles/Home.module.css'
 import { useAppSelector } from '@/lib/redux/hooks'
-import { selectCar } from '@/lib/redux/store'
+import { selectStatus } from '@/lib/redux/features/noteSlice'
 
 export default function Home() {
-    const car = useAppSelector(selectCar)
+    const car = useAppSelector(selectStatus)
     return (
         <div className={styles.container}>
             <main className={styles.main}>
                 <h1 className={styles.title}>
-                    Welcome to <a href="https://nextjs.org">{car?.name}</a>
+                    Welcome to <a href="https://nextjs.org">{status}</a>
                 </h1>
 
                 <p className={styles.description}>

@@ -1,59 +1,47 @@
-import { createSlice, type PayloadAction, configureStore } from '@reduxjs/toolkit'
-import { NoteDocType, NoteRelationDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
+import { type PayloadAction } from '@reduxjs/toolkit'
+import { createAppSlice } from '@/lib/redux/createAppSlice'
+import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
+import db from '@/lib/rxdb/database'
 
 export type ConfigureOrderState = {
     notes: NoteDocType[]
-}
-const initialState: ConfigureOrderState = {
-    notes: [],
+    status: 'idle' | 'loading' | 'failed'
 }
 
-export const noteSlice = createSlice({
+const initialState: ConfigureOrderState = {
+    notes: [],
+    status: 'idle',
+}
+
+export const noteSlice = createAppSlice({
     name: 'noteSlice',
     initialState,
-    reducers: {
-        //setCars: (state, action: PayloadAction<Car[]>) => {
-        ////traditional
-        ////return {
-        ////...state,
-        ////cars: action.payload,
-        ////}
-        //// Redux Toolkit allows us to write "mutating" logic in reducers. It
-        //// doesn't actually mutate the state because it uses the Immer library,
-        //// which detects changes to a "draft state" and produces a brand new
-        //// immutable state based off those changes
-        //state.cars = action.payload
-        //},
-        //setRates: (state, action: PayloadAction<Rate[]>) => {
-        //state.rates = action.payload
-        //},
-        ////We could potentially have a separate slice for UI
-        //setCar: (state, action: PayloadAction<string>) => {
-        ////find the matching object by slug in the array of cars
-        //state.ui.car = state.cars.find((car) => car.slug === action.payload) || null
-        //state.calculatedRate = calculateRate(state)
-        //},
-        //setMileage: (state, action: PayloadAction<number>) => {
-        //state.ui.contractSelection.mileage = action.payload
-        //state.calculatedRate = calculateRate(state)
-        //},
-        //setTerm: (state, action: PayloadAction<number>) => {
-        //state.ui.contractSelection.term = action.payload
-        //state.calculatedRate = calculateRate(state)
-        //},
-        //setInitialRental: (state, action: PayloadAction<number>) => {
-        //state.ui.contractSelection.initialRental = action.payload
-        //state.calculatedRate = calculateRate(state)
-        //},
+    reducers: (create) => ({
+        fetchNotesFromRxDB: create.asyncThunk(
+            async () => {
+                const dbInstance = await db
+                const notes = await dbInstance.notes.find().exec()
+                return notes
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<NoteDocType[]>) => {
+                    state.status = 'idle'
+                    state.notes = action.payload
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+    }),
+    selectors: {
+        selectNotes: (state) => state.notes,
+        selectStatus: (state) => state.status,
     },
 })
 
-//export const selectCar = (state: ConfigureOrderState) => state.ui.car
-//export const selectContractSelection = (state: ConfigureOrderState) => state.ui.contractSelection
-//export const selectCalculatedRate = (state: ConfigureOrderState) => state.calculatedRate
-
-export const makeStore = () => {
-    return configureStore({
-        reducer: noteSlice.reducer,
-    })
-}
+export const { fetchNotesFromRxDB } = noteSlice.actions
+export const { selectNotes, selectStatus } = noteSlice.selectors

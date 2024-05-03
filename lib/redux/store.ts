@@ -1,4 +1,4 @@
-import { combineSlices, configureStore } from '@reduxjs/toolkit'
+import { combineSlices, configureStore, ThunkAction, Action } from '@reduxjs/toolkit'
 import { noteSlice } from '@/lib/redux/features/noteSlice'
 
 // `combineSlices` automatically combines the reducers using
@@ -21,3 +21,4 @@ export type RootState = ReturnType<typeof rootReducer>
 export type AppStore = ReturnType<typeof makeStore>
 // Infer the `AppDispatch` type from the store itself
 export type AppDispatch = AppStore['dispatch']
+export type AppThunk<ThunkReturnType = void> = ThunkAction<ThunkReturnType, RootState, unknown, Action>

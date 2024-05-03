@@ -1,4 +1,4 @@
-// import types
+'use client'
 import { RxDatabase, RxCollection, RxJsonSchema, RxDocument, createRxDatabase, addRxPlugin } from 'rxdb'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
 import { NoteDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
@@ -113,6 +113,13 @@ async function initializeDB(): Promise<MyDatabase> {
             statics: noteCollectionMethods,
         },
     })
+
+    // Dynamically import the RxDB development mode plugin in development environment
+    if (process.env.NODE_ENV === 'development') {
+        const fixtureDataModule = await import('@/fixtures/notes.json')
+        const fixtureData = fixtureDataModule.default
+        await myDatabase.notes.bulkInsert(fixtureData)
+    }
 
     // add a preInsert-hook
     myDatabase.notes.postInsert(
