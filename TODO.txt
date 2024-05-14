@@ -1,1 +1,10 @@
 Please note that with this approach, the initial render on the server-side will not have access to the data fetched from RxDB. If you need to pre-populate the store with data on the server-side, you'll need to find alternative ways to fetch and serialize the data during SSR and hydrate the store on the client-side.
+
+---
+
+- Fix TS errors
+- Do write to rxdb
+- sync rxdb to redux based on write coming from elsewhere (rxdb does resolution
+  and is sst) - can I tdd this?
+- ensure only one store and one db initialised
+- make boilerplate

@@ -2,6 +2,7 @@ import { RxDatabase, RxCollection, RxJsonSchema, RxDocument, createRxDatabase, a
 import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
 import { NoteDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
+import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
 
 /**
  * declare types
@@ -124,7 +125,7 @@ async function initializeDB(): Promise<MyDatabase> {
 
     // Dynamically import the RxDB development mode plugin in development environment
     if (process.env.NODE_ENV === 'development') {
-        const fixtureDataModule = await import('@/fixtures/notes.json')
+        const fixtureDataModule = await import('@/fixtures/notes')
         const fixtureData = fixtureDataModule.default
         await myDatabase.notes.bulkInsert(fixtureData)
     }

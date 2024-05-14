@@ -9,7 +9,8 @@ export type NoteDocType = {
     parents: NoteRelationDocType[]
 }
 export type NoteRelationDocType = {
-    type: NoteRelationTypeEnum
+    id: string
+    relationshipType: NoteRelationTypeEnum
 }
 export enum NoteRelationTypeEnum {
     SUPPORTS = '+',
