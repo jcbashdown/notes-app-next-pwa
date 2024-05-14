@@ -1,5 +1,5 @@
-'use client'
 import { RxDatabase, RxCollection, RxJsonSchema, RxDocument, createRxDatabase, addRxPlugin } from 'rxdb'
+import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
 import { NoteDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
 
@@ -15,6 +15,7 @@ type NoteDocument = RxDocument<NoteDocType, NoteDocMethods>
 
 type NoteCollectionMethods = {
     countAllDocuments: () => Promise<number>
+    getAllAsJson: () => Promise<DeepReadonlyObject<NoteDocType[]>>
 }
 
 type NoteCollection = RxCollection<NoteDocType, NoteDocMethods, NoteCollectionMethods>
@@ -33,6 +34,9 @@ async function initializeDB(): Promise<MyDatabase> {
         // Remove the existing database (useful during development)
         //await removeRxDatabase('notesdb', storage);
     }
+    //enable dumping to json for loading into redux
+    addRxPlugin(RxDBJsonDumpPlugin)
+
     /**
      * create database and collections
      */
@@ -103,6 +107,10 @@ async function initializeDB(): Promise<MyDatabase> {
             const allDocs = await this.find().exec()
             return allDocs.length
         },
+        getAllAsJson: async function (this: NoteCollection) {
+            const queryResult = await this.find().exec()
+            return queryResult.map((doc) => doc.toJSON())
+        },
     }
     //TODO - ^consider removing these? Or should I use this instead of the service?
 
@@ -135,4 +143,4 @@ async function initializeDB(): Promise<MyDatabase> {
     return myDatabase
 }
 
-export default initializeDB()
+export default initializeDB

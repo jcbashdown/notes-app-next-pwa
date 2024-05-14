@@ -1,7 +1,9 @@
 import { type PayloadAction } from '@reduxjs/toolkit'
 import { createAppSlice } from '@/lib/redux/createAppSlice'
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
-import db from '@/lib/rxdb/database'
+import initializeDB from '@/lib/rxdb/database'
+
+const db = initializeDB()
 
 export type ConfigureOrderState = {
     notes: NoteDocType[]
@@ -20,7 +22,7 @@ export const noteSlice = createAppSlice({
         fetchNotesFromRxDB: create.asyncThunk(
             async () => {
                 const dbInstance = await db
-                const notes = await dbInstance.notes.find().exec()
+                const notes = await dbInstance.notes.getAllAsJson()
                 return notes
             },
             {

@@ -9,7 +9,8 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
     if (!storeRef.current) {
         // Create the store instance the first time this renders
         storeRef.current = makeStore()
-        storeRef.current.dispatch(fetchNotesFromRxDB)
+        //sync the store with rxdb
+        storeRef.current.dispatch(fetchNotesFromRxDB())
     }
 
     return <Provider store={storeRef.current}>{children}</Provider>

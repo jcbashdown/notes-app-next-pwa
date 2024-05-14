@@ -1,17 +1,22 @@
 'use client'
 import styles from '@/styles/Home.module.css'
-import { useAppSelector } from '@/lib/redux/hooks'
-import { selectStatus } from '@/lib/redux/features/noteSlice'
+import dynamic from 'next/dynamic'
 
+const Hello = dynamic(() => import('@/components/Hello'), {
+    loading: () => {
+        return (
+            <h1 className={styles.title}>
+                Welcome to <a href="https://nextjs.org">?</a>
+            </h1>
+        )
+    },
+    ssr: false,
+})
 export default function Home() {
-    const car = useAppSelector(selectStatus)
     return (
         <div className={styles.container}>
             <main className={styles.main}>
-                <h1 className={styles.title}>
-                    Welcome to <a href="https://nextjs.org">{status}</a>
-                </h1>
-
+                <Hello />
                 <p className={styles.description}>
                     Get started by editing <code className={styles.code}>pages/index.js</code>
                 </p>
