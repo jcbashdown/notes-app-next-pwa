@@ -1,9 +1,10 @@
 import { type PayloadAction } from '@reduxjs/toolkit'
+import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
 import { createAppSlice } from '@/lib/redux/createAppSlice'
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
-import initializeDB from '@/lib/rxdb/database'
+import noteService from '@/lib/rxdb/service/noteService'
 
-const db = initializeDB()
+const { fetchNotesAsJson } = noteService
 
 export type ConfigureOrderState = {
     notes: NoteDocType[]
@@ -19,19 +20,18 @@ export const noteSlice = createAppSlice({
     name: 'noteSlice',
     initialState,
     reducers: (create) => ({
-        fetchNotesFromRxDB: create.asyncThunk(
+        fetchNotesFromRxDB: create.asyncThunk<readonly DeepReadonlyObject<NoteDocType>[]>(
             async () => {
-                const dbInstance = await db
-                const notes = await dbInstance.notes.getAllAsJson()
+                const notes = await fetchNotesAsJson()
                 return notes
             },
             {
                 pending: (state) => {
                     state.status = 'loading'
                 },
-                fulfilled: (state, action: PayloadAction<NoteDocType[]>) => {
+                fulfilled: (state, action: PayloadAction<readonly DeepReadonlyObject<NoteDocType>[]>) => {
                     state.status = 'idle'
-                    state.notes = action.payload
+                    state.notes = action.payload as NoteDocType[]
                 },
                 rejected: (state) => {
                     state.status = 'failed'

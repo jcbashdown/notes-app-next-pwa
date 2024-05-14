@@ -1,4 +1,12 @@
-import { RxDatabase, RxCollection, RxJsonSchema, RxDocument, createRxDatabase, addRxPlugin } from 'rxdb'
+import {
+    RxDatabase,
+    RxCollection,
+    RxJsonSchema,
+    RxDocument,
+    createRxDatabase,
+    addRxPlugin,
+    removeRxDatabase,
+} from 'rxdb'
 import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
 import { NoteDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
@@ -8,12 +16,14 @@ import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
  * declare types
  */
 
+//TODO - remove this kind of thing now we are using service
 type NoteDocMethods = {
     scream: (v: string) => string
 }
 
-type NoteDocument = RxDocument<NoteDocType, NoteDocMethods>
+export type NoteDocument = RxDocument<NoteDocType, NoteDocMethods>
 
+//TODO - remove this kind of thing now we are using service
 type NoteCollectionMethods = {
     countAllDocuments: () => Promise<number>
     getAllAsJson: () => Promise<DeepReadonlyObject<NoteDocType[]>>
@@ -28,12 +38,14 @@ type MyDatabaseCollections = {
 type MyDatabase = RxDatabase<MyDatabaseCollections>
 
 async function initializeDB(): Promise<MyDatabase> {
+    const storage = getRxStorageDexie()
+
     // Dynamically import the RxDB development mode plugin in development environment
     if (process.env.NODE_ENV === 'development') {
         const devModePlugin = await import('rxdb/plugins/dev-mode')
         addRxPlugin(devModePlugin.RxDBDevModePlugin)
         // Remove the existing database (useful during development)
-        //await removeRxDatabase('notesdb', storage);
+        //await removeRxDatabase('notesdb', storage)
     }
     //enable dumping to json for loading into redux
     addRxPlugin(RxDBJsonDumpPlugin)
@@ -44,7 +56,7 @@ async function initializeDB(): Promise<MyDatabase> {
     const myDatabase: MyDatabase = await createRxDatabase<MyDatabaseCollections>({
         name: 'mydb',
         multiInstance: true, //use the same db across tabs
-        storage: getRxStorageDexie(),
+        storage: storage,
     })
 
     const noteSchema: RxJsonSchema<NoteDocType> = {
@@ -96,7 +108,7 @@ async function initializeDB(): Promise<MyDatabase> {
         },
     }
 
-    //TODO - consider removing these? Or should I use this instead of the service?
+    //TODO - remove in favour of service
     const noteDocMethods: NoteDocMethods = {
         scream: function (this: NoteDocument, what: string) {
             return 'screams: ' + what.toUpperCase()
@@ -113,7 +125,7 @@ async function initializeDB(): Promise<MyDatabase> {
             return queryResult.map((doc) => doc.toJSON())
         },
     }
-    //TODO - ^consider removing these? Or should I use this instead of the service?
+    //TODO - ^remove in favour of service
 
     await myDatabase.addCollections({
         notes: {

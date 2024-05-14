@@ -1,13 +1,21 @@
-import db from '@/lib/rxdb/database'
+import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
+import initializeDB, { NoteDocument } from '@/lib/rxdb/database'
 
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
 
-const fetchNotes = async (): Promise<NoteDocType[]> => {
-    //TODO - use a decorator to await?
+const db = initializeDB()
+
+//TODO - use a decorator to await?
+const fetchNotes = async (): Promise<NoteDocument[]> => {
     const dbInstance = await db
-    const docs = await dbInstance['notes'].find().exec()
-    return docs.map((doc) => doc.toJSON()) as NoteDocType[]
+    return await dbInstance.notes.find().exec()
 }
+
+const fetchNotesAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
+    const fetchNotesQueryResult = await fetchNotes()
+    return fetchNotesQueryResult.map((note) => note.toJSON())
+}
+//TODO - rest of file
 
 const addNote = async (doc: NoteDocType): Promise<void> => {
     const dbInstance = await db
@@ -32,9 +40,11 @@ const deleteNote = async (docId: string): Promise<void> => {
     }
 }
 
-export const noteService = {
+const noteService = {
     fetchNotes,
+    fetchNotesAsJson,
     addNote,
     updateNote,
     deleteNote,
 }
+export default noteService
