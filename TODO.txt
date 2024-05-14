@@ -2,9 +2,14 @@ Please note that with this approach, the initial render on the server-side will 
 
 ---
 
+# TODO now
+
 - Fix TS errors
-- Do write to rxdb
+- Do write to rxdb (not just on init)
 - sync rxdb to redux based on write coming from elsewhere (rxdb does resolution
-  and is sst) - can I tdd this?
-- ensure only one store and one db initialised
+  and is single source truth) - can I tdd this?
 - make boilerplate
+
+# Later
+
+- ensure only one store and one db initialised

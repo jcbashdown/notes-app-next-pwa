@@ -10,6 +10,11 @@ const rootReducer = combineSlices(noteSlice)
 // server-side rendering (SSR) scenarios. In SSR, separate store instances
 // are needed for each request to prevent cross-request state pollution.
 export const makeStore = () => {
+    console.log('This is being called three times because StoreProvider is being called three times.')
+    console.log("I don't yet know why this is but it doesn't affect functionality")
+    console.log(
+        "I've ruled out React.StrictMode I think. The component seems to unmount and remount otherwise useref would handle it."
+    )
     return configureStore({
         reducer: rootReducer,
     })
