@@ -45,7 +45,7 @@ async function initializeDB(): Promise<MyDatabase> {
         const devModePlugin = await import('rxdb/plugins/dev-mode')
         addRxPlugin(devModePlugin.RxDBDevModePlugin)
         // Remove the existing database (useful during development)
-        //await removeRxDatabase('notesdb', storage)
+        //await removeRxDatabase('notes-app-db', storage)
     }
     //enable dumping to json for loading into redux
     addRxPlugin(RxDBJsonDumpPlugin)
@@ -54,7 +54,7 @@ async function initializeDB(): Promise<MyDatabase> {
      * create database and collections
      */
     const myDatabase: MyDatabase = await createRxDatabase<MyDatabaseCollections>({
-        name: 'mydb',
+        name: 'notes-app-db',
         multiInstance: true, //use the same db across tabs
         storage: storage,
     })
