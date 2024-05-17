@@ -10,12 +10,21 @@ const fetchNotes = async (): Promise<NoteDocument[]> => {
     const dbInstance = await db
     return await dbInstance.notes.find().exec()
 }
+const fetchNoteTopics = async (): Promise<NoteDocument[]> => {
+    const dbInstance = await db
+    debugger
+    return await dbInstance.notes.find().where('topic').eq(true).exec()
+}
 
 const fetchNotesAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
     const fetchNotesQueryResult = await fetchNotes()
     return fetchNotesQueryResult.map((note) => note.toJSON())
 }
-//TODO - rest of file
+
+const fetchNoteTopicsAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
+    const fetchNoteTopicsQueryResult = await fetchNoteTopics()
+    return fetchNoteTopicsQueryResult.map((note) => note.toJSON())
+}
 
 const addNote = async (doc: NoteDocType): Promise<void> => {
     const dbInstance = await db
@@ -43,6 +52,8 @@ const deleteNote = async (docId: string): Promise<void> => {
 const noteService = {
     fetchNotes,
     fetchNotesAsJson,
+    fetchNoteTopics,
+    fetchNoteTopicsAsJson,
     addNote,
     updateNote,
     deleteNote,

@@ -5,6 +5,7 @@
 export type NoteDocType = {
     id: string
     text: string
+    topic: boolean
     children: NoteRelationDocType[]
     parents: NoteRelationDocType[]
 }

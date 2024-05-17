@@ -4,12 +4,15 @@ Please note that with this approach, the initial render on the server-side will 
 
 # TODO now
 
-- Fix TS errors
+- make boilerplate
+- Design rules for top level notes
+  - Notes with no parents? Notes with only "RELATED" children?
+  - Separate type for topics?
 - Do write to rxdb (not just on init)
 - sync rxdb to redux based on write coming from elsewhere (rxdb does resolution
   and is single source truth) - can I tdd this?
-- make boilerplate
 
 # Later
 
 - ensure only one store and one db initialised
+- copyright notice

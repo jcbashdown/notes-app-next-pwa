@@ -9,6 +9,7 @@ import {
 } from 'rxdb'
 import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump'
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
+import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
 import { NoteDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
 import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
 
@@ -45,10 +46,12 @@ async function initializeDB(): Promise<MyDatabase> {
         const devModePlugin = await import('rxdb/plugins/dev-mode')
         addRxPlugin(devModePlugin.RxDBDevModePlugin)
         // Remove the existing database (useful during development)
-        //await removeRxDatabase('notes-app-db', storage)
+        await removeRxDatabase('notes-app-db', storage)
     }
     //enable dumping to json for loading into redux
     addRxPlugin(RxDBJsonDumpPlugin)
+    //enable the query builder
+    addRxPlugin(RxDBQueryBuilderPlugin)
 
     /**
      * create database and collections
@@ -72,6 +75,9 @@ async function initializeDB(): Promise<MyDatabase> {
             },
             text: {
                 type: 'string',
+            },
+            topic: {
+                type: 'boolean',
             },
             children: {
                 type: 'array',
@@ -142,17 +148,6 @@ async function initializeDB(): Promise<MyDatabase> {
         await myDatabase.notes.bulkInsert(fixtureData)
     }
 
-    // add a preInsert-hook
-    myDatabase.notes.postInsert(
-        function myPostInsertHook(
-            this: NoteCollection, // own collection is bound to the scope
-            docData: NoteDocType, // documents data
-            doc: NoteDocument // RxDocument
-        ) {
-            console.log('insert to ' + this.name + '-collection: ' + doc.id)
-        },
-        false // not async
-    )
     return myDatabase
 }
 

@@ -2,7 +2,7 @@
 import { useRef, useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore, AppStore } from '@/lib/redux/store'
-import { fetchNotesFromRxDB } from '@/lib/redux/features/noteSlice'
+import { fetchNotesFromRxDB, fetchNoteTopicsFromRxDB } from '@/lib/redux/features/noteSlice'
 
 export default function StoreProvider({ children }: { children: React.ReactNode }) {
     const storeRef = useRef<AppStore | null>(null)
@@ -18,8 +18,8 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
         // Create the store instance the first time this renders
         storeRef.current = makeStore()
         //sync the store with rxdb
-        //TODO - fix expected args error
         storeRef.current.dispatch(fetchNotesFromRxDB())
+        storeRef.current.dispatch(fetchNoteTopicsFromRxDB())
     }
 
     return <Provider store={storeRef.current}>{children}</Provider>
