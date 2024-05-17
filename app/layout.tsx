@@ -1,13 +1,5 @@
 import '@/styles/globals.css'
 import dynamic from 'next/dynamic'
-import styles from '@/styles/Home.module.css'
-
-const StoreProvider = dynamic(() => import('@/app/StoreProvider'), {
-    loading: () => {
-        return <h1 className={styles.title}>Loading...</h1>
-    },
-    ssr: false,
-})
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
@@ -31,9 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </head>
             <body>
                 <noscript>You need to enable JavaScript to run this app.</noscript>
-                <StoreProvider>
-                    <div id="root">{children}</div>
-                </StoreProvider>
+                <div id="root">{children}</div>
             </body>
         </html>
     )

@@ -12,7 +12,6 @@ const fetchNotes = async (): Promise<NoteDocument[]> => {
 }
 const fetchNoteTopics = async (): Promise<NoteDocument[]> => {
     const dbInstance = await db
-    debugger
     return await dbInstance.notes.find().where('topic').eq(true).exec()
 }
 
