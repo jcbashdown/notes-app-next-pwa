@@ -1,23 +1,28 @@
-# Progressive Web App Example
+# Untitled App for notes as a directed graph
 
-This example uses [`next-pwa`](https://github.com/shadowwalker/next-pwa) to create a progressive web app (PWA) powered by [Workbox](https://developers.google.com/web/tools/workbox/).
+-   I frequently find myself taking notes that have sub clauses/nested elaborations
+-   Often these elaborations involve a relation type - support, opposition etc.
+-   I might make the same note in two places. Let's make note text identity
+-   Let's build a PWA where note taking in this way is not a hack
 
-## Deploy your own
+##
 
-Deploy the example using [Vercel](https://vercel.com?utm_source=github&utm_medium=readme&utm_campaign=next-example):
+Use next, next-pwa, redux, rxdb, tailwind
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vercel/next.js/tree/canary/examples/progressive-web-app&project-name=progressive-web-app&repository-name=progressive-web-app)
+redux stores UI state, RxDB syncs with Apollo server over graphql subscriptions and syncs with redux
 
-## How to use
+Start by building the app server-free
 
-Execute [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app) with [npm](https://docs.npmjs.com/cli/init), [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/), or [pnpm](https://pnpm.io) to bootstrap the example:
+Components won't manage their own state ever so snapshot testing is simplified
 
-```bash
-npx create-next-app --example progressive-web-app progressive-web-app
-# or
-yarn create next-app --example progressive-web-app progressive-web-app
-# or
-pnpm create next-app --example progressive-web-app progressive-web-app
-```
+Business logic should live in redux and be tested there
 
-Deploy it to the cloud with [Vercel](https://vercel.com/new?utm_source=github&utm_medium=readme&utm_campaign=next-example) ([Documentation](https://nextjs.org/docs/deployment)).
+Use a service layer as the only way to talk to RxDB
+
+# Run the app
+
+`yarn dev`
+
+# Run tests
+
+`yarn test`

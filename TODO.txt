@@ -2,17 +2,11 @@ Please note that with this approach, the initial render on the server-side will 
 
 ---
 
-# TODO now
+# TODO
 
-- make boilerplate
-- Design rules for top level notes
-  - Notes with no parents? Notes with only "RELATED" children?
-  - Separate type for topics?
-- Do write to rxdb (not just on init)
-- sync rxdb to redux based on write coming from elsewhere (rxdb does resolution
-  and is single source truth) - can I tdd this?
+- sync rxdb to redux based on sync from server (rxdb does resolution
+  and is single source truth)
 
-# Later
+# TODO Later
 
-- ensure only one store and one db initialised
-- copyright notice
+- The note text should really be the id to enable sharing between notes
