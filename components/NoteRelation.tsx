@@ -1,36 +1,50 @@
 // Note.tsx
-import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
-import { noteSlice, selectNote, updateNoteText } from '@/lib/redux/features/noteSlice'
+//import { useAppDispatch } from '@/lib/redux/hooks'
+import { NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
-
 import { calculateActionFromInput, inputTypes } from '@/lib/redux/utils/calculateActionFromInput'
+import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
+import {
+    moveCursorForward,
+    noteSlice,
+    selectNote,
+    updateRelationshipType,
+    setCursorSelection,
+} from '@/lib/redux/features/noteSlice'
 
 interface NoteProps {
     noteId: string
     parentNoteId: string
-    relationshipType: string
+    relationshipType: NoteRelationTypeEnum
     previousNoteId: string
 }
 
-const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, previousNoteId }) => {
+const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, previousNoteId }) => {
     const { handleFocus, registerInputRef, handleSelect } = useCursorFocus()
-    const inputIdentifier = `${parentNoteId}---${noteId}_text`
+    const inputIdentifier = `${parentNoteId}---${noteId}_relationship`
 
-    const dispatch = useAppDispatch()
-    //TODO - understand why I don't need to specify the type of state even in
-    //strict mode
     const note = useAppSelector((state) => selectNote(state, noteId))
+    const dispatch = useAppDispatch()
 
-    const adjustWhitespace = (text: string) => {
-        return text.trimStart().replace(/\s{2,}$/g, ' ')
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let newValue = e.target.value
+        //filter value to only include valid options ['', '+', '-']
+        let value = newValue.trim().replace(/[^+-]/g, '')[0] || ''
+        if (value !== relationshipType) {
+            dispatch(updateRelationshipType({ parentNoteId, noteId, relationshipType: value as NoteRelationTypeEnum }))
+        }
+        //if something other than a relationship character is typed then move to the text input
+        if ((value && newValue.length > 1) || newValue.length > 0) {
+            dispatch(setCursorSelection({ selectionStart: 0, selectionEnd: 0 }))
+            dispatch(moveCursorForward())
+        }
     }
-
     const handleKeyDown = (e: React.KeyboardEvent) => {
+        //TODO - dry this up with Note keydown
         const target = e.target as HTMLInputElement
         const { selectionStart, selectionEnd } = target
-        const newText = adjustWhitespace(target.value)
+        const newRelationshipType = target.value.trim()
         const key = e.key
-        console.log('key', key)
         if (['Enter', 'Tab', 'ArrowDown', 'ArrowUp'].includes(key)) {
             e.preventDefault()
         } else if (key === 'Backspace' && selectionStart === 0 && selectionEnd === 0) {
@@ -40,13 +54,13 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
         }
         const actionFunctions = calculateActionFromInput(
             key,
-            relationshipType,
-            newText,
+            newRelationshipType,
+            note.text,
             noteId,
             parentNoteId,
             previousNoteId,
             { selectionStart, selectionEnd },
-            inputTypes.TEXT,
+            inputTypes.RELATIONSHIP,
             noteSlice
         )
         for (const fnMap of actionFunctions) {
@@ -57,18 +71,12 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
             }
         }
     }
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = adjustWhitespace(e.target.value)
-        if (value !== note.text) {
-            dispatch(updateNoteText({ noteId, text: value }))
-        }
-    }
-
     return (
         <input
             type="text"
-            value={note.text}
+            //value={relationshipType || '•'}
+            value={relationshipType}
+            className="pl-1"
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onSelect={handleSelect}
@@ -83,4 +91,4 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
     )
 }
 
-export default Note
+export default NoteRelation

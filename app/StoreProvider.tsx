@@ -2,7 +2,7 @@
 import { useRef, useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore, AppStore } from '@/lib/redux/store'
-import { fetchNotesFromRxDB, fetchNoteTopicsFromRxDB } from '@/lib/redux/features/noteSlice'
+import { initFromRxDB, setNoteTopic } from '@/lib/redux/features/noteSlice'
 
 export default function StoreProvider({ children }: { children: React.ReactNode }) {
     const storeRef = useRef<AppStore | null>(null)
@@ -18,8 +18,15 @@ export default function StoreProvider({ children }: { children: React.ReactNode 
         // Create the store instance the first time this renders
         storeRef.current = makeStore()
         //sync the store with rxdb
-        storeRef.current.dispatch(fetchNotesFromRxDB())
-        storeRef.current.dispatch(fetchNoteTopicsFromRxDB())
+        storeRef.current
+            .dispatch(initFromRxDB())
+            .unwrap()
+            .then((initializationData) => {
+                const { noteTopics } = initializationData
+                //TODO - remove this in future - user must select manually. Using
+                //it now so we don't have to implement selection yet
+                storeRef.current!.dispatch(setNoteTopic(noteTopics[0].id))
+            })
     }
 
     return <Provider store={storeRef.current}>{children}</Provider>

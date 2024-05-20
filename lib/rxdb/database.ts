@@ -8,9 +8,9 @@ import {
     removeRxDatabase,
 } from 'rxdb'
 import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump'
-import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
+//import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie'
 import { RxDBQueryBuilderPlugin } from 'rxdb/plugins/query-builder'
-import { NoteDocType, NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
+import { NoteDocType, NoteRelationTypeEnum, NoteRelationDocType } from '@/lib/rxdb/types/noteTypes'
 import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
 
 /**
@@ -23,6 +23,7 @@ type NoteDocMethods = {
 }
 
 export type NoteDocument = RxDocument<NoteDocType, NoteDocMethods>
+export type NoteRelationDocument = RxDocument<NoteRelationDocType>
 
 //TODO - remove this kind of thing now we are using service
 type NoteCollectionMethods = {
@@ -31,15 +32,27 @@ type NoteCollectionMethods = {
 }
 
 type NoteCollection = RxCollection<NoteDocType, NoteDocMethods, NoteCollectionMethods>
+type NoteRelationCollection = RxCollection<NoteRelationDocType>
 
 type MyDatabaseCollections = {
     notes: NoteCollection
+    note_relations: NoteRelationCollection
 }
 
-type MyDatabase = RxDatabase<MyDatabaseCollections>
+export type MyDatabase = RxDatabase<MyDatabaseCollections>
+
+let databaseInstance: MyDatabase | null = null
 
 async function initializeDB(): Promise<MyDatabase> {
-    const storage = getRxStorageDexie()
+    if (databaseInstance) {
+        return databaseInstance
+    }
+    let storage = null
+    if (process.env.NODE_ENV === 'test') {
+        storage = (await import('rxdb/plugins/storage-memory')).getRxStorageMemory()
+    } else {
+        storage = (await import('rxdb/plugins/storage-dexie')).getRxStorageDexie()
+    }
 
     // Dynamically import the RxDB development mode plugin in development environment
     if (process.env.NODE_ENV === 'development') {
@@ -64,7 +77,7 @@ async function initializeDB(): Promise<MyDatabase> {
 
     const noteSchema: RxJsonSchema<NoteDocType> = {
         title: 'Note',
-        description: 'describes a note and its relations',
+        description: 'describes a note',
         version: 0,
         primaryKey: 'id',
         type: 'object',
@@ -79,37 +92,33 @@ async function initializeDB(): Promise<MyDatabase> {
             topic: {
                 type: 'boolean',
             },
-            children: {
-                type: 'array',
-                items: {
-                    type: 'object',
-                    properties: {
-                        id: {
-                            type: 'string',
-                            ref: 'Note',
-                        },
-                        relationshipType: {
-                            type: 'string',
-                            enum: Object.values(NoteRelationTypeEnum),
-                        },
-                    },
-                },
+        },
+    }
+    const noteRelationSchema: RxJsonSchema<NoteRelationDocType> = {
+        title: 'Note Relation',
+        description: 'describes relations between ntoes',
+        version: 0,
+        primaryKey: 'id',
+        type: 'object',
+        properties: {
+            id: {
+                type: 'string',
+                maxLength: 73,
             },
-            parents: {
-                type: 'array',
-                items: {
-                    type: 'object',
-                    properties: {
-                        id: {
-                            type: 'string',
-                            ref: 'Note',
-                        },
-                        relationshipType: {
-                            type: 'string',
-                            enum: Object.values(NoteRelationTypeEnum),
-                        },
-                    },
-                },
+            parentId: {
+                type: 'string',
+                maxLength: 73,
+            },
+            childId: {
+                type: 'string',
+                maxLength: 73,
+            },
+            relationshipType: {
+                type: 'string',
+                enum: Object.values(NoteRelationTypeEnum),
+            },
+            order: {
+                type: 'number',
             },
         },
     }
@@ -139,16 +148,22 @@ async function initializeDB(): Promise<MyDatabase> {
             methods: noteDocMethods,
             statics: noteCollectionMethods,
         },
+        note_relations: {
+            schema: noteRelationSchema,
+        },
     })
 
     // Dynamically import the RxDB development mode plugin in development environment
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
         const fixtureDataModule = await import('@/fixtures/notes')
         const fixtureData = fixtureDataModule.default
-        await myDatabase.notes.bulkInsert(fixtureData)
+        const { extractNotes, extractNoteRelationss } = fixtureDataModule
+        await myDatabase.notes.bulkInsert(extractNotes(fixtureData))
+        await myDatabase.note_relations.bulkInsert(extractNoteRelationss(fixtureData))
     }
 
-    return myDatabase
+    databaseInstance = myDatabase
+    return databaseInstance
 }
 
 export default initializeDB

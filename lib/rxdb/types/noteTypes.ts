@@ -6,12 +6,13 @@ export type NoteDocType = {
     id: string
     text: string
     topic: boolean
-    children: NoteRelationDocType[]
-    parents: NoteRelationDocType[]
 }
 export type NoteRelationDocType = {
     id: string
+    parentId: string
+    childId: string
     relationshipType: NoteRelationTypeEnum
+    order: number
 }
 export enum NoteRelationTypeEnum {
     SUPPORTS = '+',

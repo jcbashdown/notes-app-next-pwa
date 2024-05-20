@@ -3,20 +3,20 @@ import initializeDB, { NoteDocument } from '@/lib/rxdb/database'
 
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
 
-const db = initializeDB()
+//const db = initializeDB()
 
 //TODO - use a decorator to await?
 const fetchNotes = async (): Promise<NoteDocument[]> => {
-    const dbInstance = await db
+    const dbInstance = await initializeDB()
     return await dbInstance.notes.find().exec()
 }
 const fetchNoteTopics = async (): Promise<NoteDocument[]> => {
-    const dbInstance = await db
+    const dbInstance = await initializeDB()
     return await dbInstance.notes.find().where('topic').eq(true).exec()
 }
 
 const fetchNote = async (id: string): Promise<NoteDocument | null> => {
-    const dbInstance = await db
+    const dbInstance = await initializeDB()
     return await dbInstance.notes.findOne().where('id').eq(id).exec()
 }
 
@@ -35,13 +35,14 @@ const fetchNoteAsJson = async (id: string): Promise<DeepReadonlyObject<NoteDocTy
     return note?.toJSON() || null
 }
 
-const addNote = async (doc: NoteDocType): Promise<void> => {
-    const dbInstance = await db
+const addNote = async (doc: NoteDocType): Promise<NoteDocType> => {
+    const dbInstance = await initializeDB()
     await dbInstance.notes.insert(doc)
+    return doc
 }
 
 const updateNote = async (docId: string, changes: Partial<NoteDocType>): Promise<void> => {
-    const dbInstance = await db
+    const dbInstance = await initializeDB()
     const doc = await dbInstance.notes.findOne().where('id').eq(docId).exec()
     if (doc) {
         await doc.update({
@@ -51,7 +52,7 @@ const updateNote = async (docId: string, changes: Partial<NoteDocType>): Promise
 }
 
 const deleteNote = async (docId: string): Promise<void> => {
-    const dbInstance = await db
+    const dbInstance = await initializeDB()
     const doc = await dbInstance.notes.findOne().where('id').eq(docId).exec()
     if (doc) {
         await doc.remove()
