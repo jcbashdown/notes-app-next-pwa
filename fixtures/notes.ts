@@ -16,7 +16,6 @@ const fixture = [
                 order: 1,
             },
         ],
-        //parents: [],
     },
     {
         id: 'a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5',
@@ -29,36 +28,18 @@ const fixture = [
                 order: 0,
             },
         ],
-        //parents: [
-        //{
-        //id: 'f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5',
-        //relationshipType: NoteRelationTypeEnum.SUPPORTS,
-        //},
-        //],
     },
     {
         id: '1a2b3c4d-5e6f-4b5c-8b4c-c5e5e5d5f5d5',
         text: 'This note opposes the root note',
         topic: false,
         children: [],
-        //parents: [
-        //{
-        //id: 'f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5',
-        //relationshipType: NoteRelationTypeEnum.OPPOSES,
-        //},
-        //],
     },
     {
         id: 'a0b1c2d3-e4f5-4b5c-8b4c-c5e5e5d5f5d5',
         text: 'This note is related to note 2',
         topic: false,
         children: [],
-        //parents: [
-        //{
-        //id: 'a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5',
-        //relationshipType: NoteRelationTypeEnum.RELATED,
-        //},
-        //],
     },
 ]
 export const extractNotes = (notes: any): NoteDocType[] => {
@@ -79,15 +60,6 @@ export const extractNoteRelationss = (notes: any): NoteRelationDocType[] => {
                 order: child.order,
             }
         }
-        //No longer used
-        //for (const parent of note.parents) {
-        //memo[`${parent.id}-${note.id}`] = {
-        //id: `${parent.id}-${note.id}`,
-        //parentId: parent.id,
-        //childId: note.id,
-        //relationshipType: parent.relationshipType,
-        //}
-        //}
         return memo
     }, {})
     return Object.values(noteRelations)

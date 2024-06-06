@@ -24,11 +24,11 @@ interface AppInitData {
     noteTopics: NoteDocType[]
 }
 
-interface IdNoteMap {
+export interface IdNoteMap {
     [id: string]: NoteDocType
 }
 
-interface IdNoteRelationsMap {
+export interface IdNoteRelationsMap {
     [id: string]: NoteRelationDocType[]
 }
 interface IdNoteRelationMap {
@@ -52,7 +52,7 @@ type RenderOrderType = {
     indexToId: string[]
     //add index to id and id to index for note ids
 }
-export type ConfigureOrderState = {
+export type NotesState = {
     newTopicText: string
     cursorPosition: number | null
     cursorSelection: cursorSelectionType | null
@@ -65,7 +65,7 @@ export type ConfigureOrderState = {
     renderOrder: RenderOrderType
 }
 
-const initialState: ConfigureOrderState = {
+const initialState: NotesState = {
     newTopicText: '',
     cursorPosition: 0, //TODO - consider a separate slice for cursor position stuff
     cursorSelection: { selectionStart: 0, selectionEnd: 0 },
@@ -113,7 +113,7 @@ const returnIdIfTopic = (inputIdentifier: string): string | null => {
 }
 
 const calculatePositionInOrder = (
-    { cursorPosition, noteChildrenByParentId, renderOrder }: ConfigureOrderState,
+    { cursorPosition, noteChildrenByParentId, renderOrder }: NotesState,
     parentId: string
 ): number => {
     if (cursorPosition === null) {
@@ -140,11 +140,7 @@ const reorderChildren = (children: NoteRelationDocType[], newRelationship: NoteR
     })
 }
 
-const traverseChildren = (
-    state: ConfigureOrderState,
-    note: NoteDocType,
-    renderOrder: RenderOrderType
-): RenderOrderType => {
+const traverseChildren = (state: NotesState, note: NoteDocType, renderOrder: RenderOrderType): RenderOrderType => {
     return (state.noteChildrenByParentId[note.id] || []).reduce((memo, child) => {
         const childNoteId = child.childId
         const childNote = state.notesById[childNoteId]
@@ -163,7 +159,7 @@ const traverseChildren = (
     }, renderOrder)
 }
 
-const buildNoteOrderForTopic = (state: ConfigureOrderState, activeTopic: NoteDocType): RenderOrderType => {
+const buildNoteOrderForTopic = (state: NotesState, activeTopic: NoteDocType): RenderOrderType => {
     const initialIdToIndex: idToIndexType = {}
     initialIdToIndex['newTopic'] = 0
     //TODO - this needs the order of ids also
@@ -208,7 +204,7 @@ const buildNoteRelationMappings = (noteRelations: NoteRelationDocType[]): NoteRe
     }
 }
 
-const updateTopic = (state: ConfigureOrderState, newTopic: string) => {
+const updateTopic = (state: NotesState, newTopic: string) => {
     if (state.currentNoteTopic !== newTopic) {
         state.currentNoteTopic = newTopic
         const currentNoteTopicDoc = state.notesById[newTopic]
@@ -216,7 +212,7 @@ const updateTopic = (state: ConfigureOrderState, newTopic: string) => {
         state.cursorPosition = state.renderOrder.idToIndex[`${newTopic}_topic`]
     }
 }
-const setCursorPositionAndUpdateTopicIfNeeded = (state: ConfigureOrderState, newCursorPosition: number) => {
+const setCursorPositionAndUpdateTopicIfNeeded = (state: NotesState, newCursorPosition: number) => {
     state.cursorPosition = newCursorPosition
     const newTopicId = returnIdIfTopic(state.renderOrder.indexToId[state.cursorPosition])
     if (newTopicId) {
@@ -449,7 +445,7 @@ export const noteSlice = createAppSlice({
         selectCurrentNoteTopic: (state) => state.currentNoteTopic,
         selectNote: (state, id: string) => state.notesById[id],
         selectNoteChildren: (state, id: string) => state.noteChildrenByParentId[id],
-        selectNotes: (state) => Object.values(state.notesById),
+        selectNoteChildrenByParentId: (state) => state.noteChildrenByParentId,
         selectNotesById: (state) => state.notesById,
         selectNoteTopics: (state) => state.noteTopics,
         selectStatus: (state) => state.status,
@@ -483,7 +479,7 @@ export const {
     selectNoteTopics,
     selectNote,
     selectNoteChildren,
-    selectNotes,
+    selectNoteChildrenByParentId,
     selectNotesById,
     selectRenderOrder,
 } = noteSlice.selectors
