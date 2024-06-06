@@ -2,6 +2,7 @@
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
 import { noteSlice, selectNote, updateNoteText } from '@/lib/redux/features/noteSlice'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
+import { adjustWhitespace } from '@/lib/helpers/textHelpers'
 
 import { calculateActionFromInput, inputTypes } from '@/lib/redux/utils/calculateActionFromInput'
 
@@ -20,10 +21,6 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
     //TODO - understand why I don't need to specify the type of state even in
     //strict mode
     const note = useAppSelector((state) => selectNote(state, noteId))
-
-    const adjustWhitespace = (text: string) => {
-        return text.trimStart().replace(/\s{2,}$/g, ' ')
-    }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         const target = e.target as HTMLInputElement

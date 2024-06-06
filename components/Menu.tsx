@@ -82,7 +82,12 @@ export default function Menu() {
                     } absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg`}
                     id="menuDropdown"
                 >
-                    <a href="#" onClick={handleClick} className="block px-4 py-2 text-gray-800 hover:bg-gray-200">
+                    <a
+                        id="download-note-json"
+                        href="#"
+                        onClick={handleClick}
+                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                    >
                         Download notes
                     </a>
                 </div>

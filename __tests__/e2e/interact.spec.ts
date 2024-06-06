@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test'
+import fs from 'fs'
+import path from 'path'
 
 //Interact and then check the generated notes and relationships are what's expected
 test('test', async ({ page }) => {
@@ -83,4 +85,22 @@ test('test', async ({ page }) => {
     await page.locator('div:nth-child(2) > input').fill('Newnot')
     await page.locator('.space-y-4 > div > input').first().click()
     await page.getByRole('textbox').nth(2).click()
+    await page.click('#menuButton')
+    // Set up the download listener
+    const [download] = await Promise.all([
+        page.waitForEvent('download'), // Wait for the download event
+        page.click('#download-note-json'),
+    ])
+    // Wait for the download to complete
+    const downloadPath = await download.path()
+    const downloadFilePath = path.join(__dirname, 'downloads', path.basename(downloadPath))
+
+    // Save the downloaded file to a specific location
+    await download.saveAs(downloadFilePath)
+
+    // Read the downloaded file contents
+    const fileContents = fs.readFileSync(downloadFilePath, 'utf8')
+
+    // Assert the file contents
+    expect(fileContents).toContain('Expected content in the file')
 })

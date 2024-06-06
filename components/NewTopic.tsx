@@ -3,6 +3,7 @@ import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks'
 import { calculateActionFromNewTopicInput } from '@/lib/redux/utils/calculateActionFromInput'
 import { noteSlice, selectNewTopicText, setNewTopicText } from '@/lib/redux/features/noteSlice'
+import { adjustWhitespace } from '@/lib/helpers/textHelpers'
 
 export default function NewTopic() {
     const { handleFocus, registerInputRef, handleSelect } = useCursorFocus()
@@ -36,7 +37,7 @@ export default function NewTopic() {
         }
     }
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.trim()
+        const value = adjustWhitespace(e.target.value)
         if (value !== newTopicText) {
             dispatch(setNewTopicText(value))
         }

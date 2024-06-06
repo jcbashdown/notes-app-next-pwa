@@ -3,6 +3,7 @@
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
 import { noteSlice, selectNote, updateNoteText, selectCurrentNoteTopic } from '@/lib/redux/features/noteSlice'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
+import { adjustWhitespace } from '@/lib/helpers/textHelpers'
 
 import { calculateActionFromTopicInput, inputTypes } from '@/lib/redux/utils/calculateActionFromInput'
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
@@ -49,7 +50,7 @@ export default function NoteTopic({ noteTopic }: NoteTopicProps) {
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value.trim()
+        const value = adjustWhitespace(e.target.value)
         if (value !== note.text) {
             dispatch(updateNoteText({ noteId: note.id, text: value }))
         }
