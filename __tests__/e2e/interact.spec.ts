@@ -1,6 +1,24 @@
 import { test, expect } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
+import e2eTestFixture from '@/fixtures/e2e-test-fixture.json'
+
+function removeIds(json: any): any {
+    if (Array.isArray(json)) {
+        return json.map((obj) => removeIds(obj))
+    } else if (typeof json === 'object' && json !== null) {
+        const { id, ...rest } = json
+        const newObj: any = {}
+        for (const key in rest) {
+            newObj[key] = removeIds(rest[key])
+        }
+        return newObj
+    }
+    return json
+}
+
+//We don't really want deterministic ulid code getting into prod...? This approach can't really work because of that
+//Or is it okay?
 
 //Interact and then check the generated notes and relationships are what's expected
 test('test', async ({ page }) => {
@@ -102,5 +120,5 @@ test('test', async ({ page }) => {
     const fileContents = fs.readFileSync(downloadFilePath, 'utf8')
 
     // Assert the file contents
-    expect(fileContents).toContain('Expected content in the file')
+    expect(removeIds(JSON.parse(fileContents))).toEqual(removeIds(e2eTestFixture))
 })

@@ -8,7 +8,8 @@
         "test": "jest",
         "test:watch": "jest --watchAll",
         "test:coverage": "jest --coverage",
-        "test:all": "playwright test && jest"
+        "test:all": "playwright test && jest",
+        "playwright": "playwright test"
     },
     "dependencies": {
         "@reduxjs/toolkit": "^2.2.3",
