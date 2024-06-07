@@ -12,9 +12,10 @@ import { NoteDocType, NoteRelationTypeEnum, NoteRelationDocType } from '@/lib/rx
 //TODO - type for topics. Not just generic note docs
 import noteService from '@/lib/rxdb/service/noteService'
 import noteRelationService from '@/lib/rxdb/service/noteRelationService'
+import { extractNoteRelations, extractNotes } from '@/fixtures/notes'
 
-const { fetchNotesAsJson, fetchNoteTopicsAsJson } = noteService
-const { fetchNoteRelationsAsJson } = noteRelationService
+const { fetchNotesAsJson, fetchNoteTopicsAsJson, bulkInsertNotes } = noteService
+const { fetchNoteRelationsAsJson, bulkInsertNoteRelations } = noteRelationService
 
 const addNoteToRxDB = noteService.addNote
 
@@ -439,6 +440,39 @@ export const noteSlice = createAppSlice({
                 },
             }
         ),
+        initFromFixture: create.asyncThunk<DeepReadonlyObject<AppInitData>, any>(
+            async (data) => {
+                const notesFixture = data
+                await bulkInsertNotes(extractNotes(notesFixture))
+                await bulkInsertNoteRelations(extractNoteRelations(notesFixture))
+                const notes = await fetchNotesAsJson()
+                const noteRelations = await fetchNoteRelationsAsJson()
+                const noteTopics = await fetchNoteTopicsAsJson()
+                return { noteTopics, noteRelations, notes }
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<DeepReadonlyObject<AppInitData>>) => {
+                    state.status = 'idle'
+                    const { noteTopics, noteRelations, notes } = action.payload
+                    state.notesById = notes.reduce<IdNoteMap>((memo, note) => {
+                        memo[note.id] = note
+                        return memo
+                    }, {})
+                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        noteRelations as NoteRelationDocType[]
+                    )
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+                    state.noteTopics = noteTopics as NoteDocType[]
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
     }),
     selectors: {
         selectNewTopicText: (state) => state.newTopicText,
@@ -458,6 +492,7 @@ export const noteSlice = createAppSlice({
 export const {
     setNewTopicText,
     initFromRxDB,
+    initFromFixture,
     addEmptyNote,
     updateNoteText,
     updateRelationshipType,

@@ -59,6 +59,11 @@ const deleteNote = async (docId: string): Promise<void> => {
     }
 }
 
+const bulkInsertNotes = async (notes: NoteDocType[]): Promise<void> => {
+    const dbInstance = await initializeDB()
+    await dbInstance.notes.bulkInsert(notes)
+}
+
 const noteService = {
     fetchNote,
     fetchNoteAsJson,
@@ -69,5 +74,6 @@ const noteService = {
     addNote,
     updateNote,
     deleteNote,
+    bulkInsertNotes,
 }
 export default noteService

@@ -157,9 +157,9 @@ async function initializeDB(): Promise<MyDatabase> {
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
         const fixtureDataModule = await import('@/fixtures/notes')
         const fixtureData = fixtureDataModule.default
-        const { extractNotes, extractNoteRelationss } = fixtureDataModule
+        const { extractNotes, extractNoteRelations } = fixtureDataModule
         await myDatabase.notes.bulkInsert(extractNotes(fixtureData))
-        await myDatabase.note_relations.bulkInsert(extractNoteRelationss(fixtureData))
+        await myDatabase.note_relations.bulkInsert(extractNoteRelations(fixtureData))
     }
 
     databaseInstance = myDatabase

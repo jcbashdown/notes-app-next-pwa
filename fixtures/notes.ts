@@ -49,7 +49,7 @@ export const extractNotes = (notes: any): NoteDocType[] => {
     })
 }
 //Doesn't have to be efficient - only used in development. If we use it in tests then maybe we can remove some redundancy
-export const extractNoteRelationss = (notes: any): NoteRelationDocType[] => {
+export const extractNoteRelations = (notes: any): NoteRelationDocType[] => {
     const noteRelations = notes.reduce((memo: any, note: any): NoteRelationDocType => {
         for (const child of note.children) {
             memo[`${note.id}-${child.id}`] = {

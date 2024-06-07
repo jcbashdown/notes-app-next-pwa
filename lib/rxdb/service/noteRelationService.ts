@@ -26,13 +26,13 @@ const fetchNoteRelationAsJson = async (id: string): Promise<DeepReadonlyObject<N
     return noteRelation?.toJSON() || null
 }
 
-const addNote = async (doc: NoteRelationDocType): Promise<NoteRelationDocType> => {
+const addNoteRelation = async (doc: NoteRelationDocType): Promise<NoteRelationDocType> => {
     const dbInstance = await initializeDB()
     await dbInstance.note_relations.insert(doc)
     return doc
 }
 
-const updateNote = async (docId: string, changes: Partial<NoteRelationDocType>): Promise<void> => {
+const updateNoteRelation = async (docId: string, changes: Partial<NoteRelationDocType>): Promise<void> => {
     const dbInstance = await initializeDB()
     const doc = await dbInstance.note_relations.findOne().where('id').eq(docId).exec()
     if (doc) {
@@ -42,7 +42,7 @@ const updateNote = async (docId: string, changes: Partial<NoteRelationDocType>):
     }
 }
 
-const deleteNote = async (docId: string): Promise<void> => {
+const deleteNoteRelation = async (docId: string): Promise<void> => {
     const dbInstance = await initializeDB()
     const doc = await dbInstance.note_relations.findOne().where('id').eq(docId).exec()
     if (doc) {
@@ -50,13 +50,19 @@ const deleteNote = async (docId: string): Promise<void> => {
     }
 }
 
+const bulkInsertNoteRelations = async (noteRelations: NoteRelationDocType[]): Promise<void> => {
+    const dbInstance = await initializeDB()
+    await dbInstance.note_relations.bulkInsert(noteRelations)
+}
+
 const noteRelationService = {
     fetchNoteRelation,
     fetchNoteRelationAsJson,
     fetchNoteRelations,
     fetchNoteRelationsAsJson,
-    addNote,
-    updateNote,
-    deleteNote,
+    addNoteRelation,
+    updateNoteRelation,
+    deleteNoteRelation,
+    bulkInsertNoteRelations,
 }
 export default noteRelationService
