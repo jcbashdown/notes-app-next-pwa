@@ -6,13 +6,6 @@ import { initFromRxDB, setNoteTopic } from '@/lib/redux/features/noteSlice'
 
 export default function StoreProvider({ children }: { children: React.ReactNode }) {
     const storeRef = useRef<AppStore | null>(null)
-    useEffect(() => {
-        console.log('StoreProvider mounted')
-
-        return () => {
-            console.log('StoreProvider unmounted')
-        }
-    }, [])
 
     if (!storeRef.current) {
         // Create the store instance the first time this renders

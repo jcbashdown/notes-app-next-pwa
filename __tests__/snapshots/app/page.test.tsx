@@ -1,7 +1,7 @@
-import { render } from '@testing-library/react'
-import Index from '@/app/page'
+import { render, act } from '@testing-library/react'
+import Home from '@/app/page'
 
-it('renders homepage unchanged', () => {
-    const { container } = render(<Index />)
+it('renders homepage unchanged', async () => {
+    const { container } = await act(async () => render(<Home />))
     expect(container).toMatchSnapshot()
 })
