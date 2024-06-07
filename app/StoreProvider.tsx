@@ -2,7 +2,7 @@
 import { useRef } from 'react'
 import { Provider } from 'react-redux'
 import { makeStore, AppStore } from '@/lib/redux/store'
-import { initFromRxDB, initFromFixture, setNoteTopic } from '@/lib/redux/features/noteSlice'
+import { initFromRxDB, initFromFixture, setNoteTopic, setCursorPosition } from '@/lib/redux/features/noteSlice'
 
 export default function StoreProvider({ children, fixture = null }: { children: React.ReactNode; fixture: any }) {
     const storeRef = useRef<AppStore | null>(null)
@@ -20,6 +20,7 @@ export default function StoreProvider({ children, fixture = null }: { children: 
                     //TODO - remove this in future - user must select manually. Using
                     //it now so we don't have to implement selection yet
                     storeRef.current!.dispatch(setNoteTopic(noteTopics[0].id))
+                    storeRef.current!.dispatch(setCursorPosition(0))
                 })
         } else {
             storeRef.current
@@ -30,6 +31,7 @@ export default function StoreProvider({ children, fixture = null }: { children: 
                     //TODO - remove this in future - user must select manually. Using
                     //it now so we don't have to implement selection yet
                     storeRef.current!.dispatch(setNoteTopic(noteTopics[0].id))
+                    storeRef.current!.dispatch(setCursorPosition(0))
                 })
         }
     }
