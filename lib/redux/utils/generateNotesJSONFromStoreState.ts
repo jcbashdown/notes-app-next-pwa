@@ -20,6 +20,6 @@ export default function generateNotesJSONFromStoreState(
             }
         }),
         null,
-        2
+        4
     )
 }
