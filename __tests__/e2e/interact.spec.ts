@@ -42,7 +42,7 @@ test('test', async ({ page }) => {
     await page.locator('li:nth-child(2) > .p-1 > input:nth-child(2)').fill('This note opposes the New note topic')
     await page.locator('li:nth-child(2) > .p-1 > input:nth-child(2)').press('Enter')
     await page.locator('li:nth-child(3) > .p-1 > .pl-1').fill('T')
-    await page.locator('li:nth-child(3) > .p-1 > input:nth-child(2)').fill('his note is related')
+    await page.locator('li:nth-child(3) > .p-1 > input:nth-child(2)').fill('This note is related')
     await page.locator('li:nth-child(3) > .p-1 > input:nth-child(2)').press('Enter')
     await page.locator('li:nth-child(4) > .p-1 > .pl-1').press('Tab')
     await page.locator('li:nth-child(4) > .p-1 > .pl-1').fill('+')
