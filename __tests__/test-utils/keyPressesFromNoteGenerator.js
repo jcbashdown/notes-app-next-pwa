@@ -1,4 +1,5 @@
-export const FOCUS_CHANGERS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter']
+export const FOCUS_CHANGERS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Backspace']
+export const SINGLE_KEYPRESSES = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab', 'Backspace']
 
 export default class KeyPressesFromNoteGenerator {
     constructor() {

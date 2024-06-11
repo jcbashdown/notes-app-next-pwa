@@ -51,6 +51,7 @@ export default function NewTopic() {
             onKeyDown={handleKeyDown}
             placeholder="Add a new note..."
             onSelect={handleSelect}
+            data-id="newTopic"
             ref={registerInputRef('newTopic')}
             onChange={handleChange}
             onFocus={(event) =>

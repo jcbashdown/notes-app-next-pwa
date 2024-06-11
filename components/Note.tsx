@@ -69,6 +69,7 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onSelect={handleSelect}
+            data-id={inputIdentifier}
             ref={registerInputRef(inputIdentifier)}
             onFocus={(event) =>
                 handleFocus({

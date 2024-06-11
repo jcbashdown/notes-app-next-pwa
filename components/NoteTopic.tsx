@@ -64,6 +64,7 @@ export default function NoteTopic({ noteTopic }: NoteTopicProps) {
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 onSelect={handleSelect}
+                data-id={inputIdentifier}
                 ref={registerInputRef(inputIdentifier)}
                 onFocus={(event) =>
                     handleFocus({

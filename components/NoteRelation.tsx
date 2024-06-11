@@ -80,6 +80,7 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onSelect={handleSelect}
+            data-id={inputIdentifier}
             ref={registerInputRef(inputIdentifier)}
             onFocus={(event) =>
                 handleFocus({
