@@ -11,6 +11,7 @@ import {
     updateRelationshipType,
     setCursorSelection,
     insertAtStartOfNoteText,
+    selectIsCurrentTopicChild,
 } from '@/lib/redux/features/noteSlice'
 
 interface NoteProps {
@@ -25,6 +26,7 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
     const inputIdentifier = `${parentNoteId}---${noteId}_relationship`
 
     const note = useAppSelector((state) => selectNote(state, noteId))
+    const isCurrentTopicChild = useAppSelector((state) => selectIsCurrentTopicChild(state, noteId))
     const dispatch = useAppDispatch()
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +72,7 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
             previousNoteId,
             { selectionStart, selectionEnd },
             inputTypes.RELATIONSHIP,
+            isCurrentTopicChild,
             noteSlice
         )
         for (const fnMap of actionFunctions) {

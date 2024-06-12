@@ -280,6 +280,9 @@ export const noteSlice = createAppSlice({
                 setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
             }
         }),
+        reduceNoteNesting: create.reducer(
+            (state, action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>) => {}
+        ),
         nestNote: create.reducer(
             (state, action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>) => {
                 //TODO - test
@@ -491,6 +494,9 @@ export const noteSlice = createAppSlice({
         selectCursorPosition: (state) => state.cursorPosition,
         selectCursorSelection: (state) => state.cursorSelection,
         selectRenderOrder: (state) => state.renderOrder,
+        selectIsCurrentTopicChild: (state, id: string) => {
+            return state.noteChildrenByParentId[state.currentNoteTopic || ''].some((child) => child.childId === id)
+        },
     },
 })
 
@@ -504,6 +510,7 @@ export const {
     setCursorPosition,
     setCursorSelection,
     nestNote,
+    reduceNoteNesting,
     setNoteTopic,
     moveCursorBack,
     moveCursorForward,
@@ -523,4 +530,5 @@ export const {
     selectNoteChildrenByParentId,
     selectNotesById,
     selectRenderOrder,
+    selectIsCurrentTopicChild,
 } = noteSlice.selectors

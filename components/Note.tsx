@@ -1,6 +1,6 @@
 // Note.tsx
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
-import { noteSlice, selectNote, updateNoteText } from '@/lib/redux/features/noteSlice'
+import { noteSlice, selectNote, updateNoteText, selectIsCurrentTopicChild } from '@/lib/redux/features/noteSlice'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
 import { adjustWhitespace } from '@/lib/helpers/textHelpers'
 
@@ -21,6 +21,7 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
     //TODO - understand why I don't need to specify the type of state even in
     //strict mode
     const note = useAppSelector((state) => selectNote(state, noteId))
+    const isCurrentTopicChild = useAppSelector((state) => selectIsCurrentTopicChild(state, noteId))
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         const target = e.target as HTMLInputElement
@@ -44,6 +45,7 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
             previousNoteId,
             { selectionStart, selectionEnd },
             inputTypes.TEXT,
+            isCurrentTopicChild,
             noteSlice
         )
         for (const fnMap of actionFunctions) {

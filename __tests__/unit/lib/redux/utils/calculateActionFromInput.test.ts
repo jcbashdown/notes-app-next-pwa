@@ -15,6 +15,7 @@ const mockSlice = {
         moveUp: jest.fn(),
         deleteNote: jest.fn(),
         setNewTopicText: jest.fn(),
+        reduceNoteNesting: jest.fn(),
     },
 } //TODO - find a better way to keep this in sync with the slice actions
 
@@ -34,131 +35,356 @@ import {
 describe('calculateActionFromInput', () => {
     describe('when its a relationship or text input', () => {
         describe('when key is backspace', () => {
-            it('deletes the note, moves back twice and sets the cursor position to the end when the relationshipType and text is empty and the action happens from a text input', async () => {
-                fakeDispatcher(
-                    calculateActionFromInput(
-                        'Backspace',
-                        '',
-                        '',
-                        'noteId',
-                        'parentId',
-                        'previousNoteId',
-                        { selectionStart: 0, selectionEnd: 0 },
-                        inputTypes.TEXT,
-                        mockSlice
+            describe('and the note is not at the lowest level', () => {
+                it('deletes the note, moves back twice and sets the cursor position to the end when the relationshipType and text is empty and the action happens from a text input', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.TEXT,
+                            true,
+                            mockSlice
+                        )
                     )
-                )
-                expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(2)
-                expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
-                    selectionStart: 999999,
-                    selectionEnd: 999999,
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(2)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).toHaveBeenCalledWith('noteId')
                 })
-                expect(mockSlice.actions.deleteNote).toHaveBeenCalledWith('noteId')
+                it('moves back when the action happens from the start of the input even if the relationship text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '+',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.TEXT,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                })
+                it('moves back when the action happens from the start of the input even if the note text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            'abc',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.TEXT,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                })
+                it('does nothing if the action happens from the middle of the text input when it has content', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            'abc',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 1, selectionEnd: 1 },
+                            inputTypes.TEXT,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                })
+                it('deletes the note, moves back once and sets the cursor position to the end when the relationshipType and text is empty and the action happens from a relationship input', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.RELATIONSHIP,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).toHaveBeenCalledWith('noteId')
+                })
+                it('it moves back when the cursor is at the start of a relationship input even if the relationship is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '+',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.RELATIONSHIP,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                })
+                it('it moves back when the cursor is at the start of a relationship input even if the note text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            'abc',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.RELATIONSHIP,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                })
+                it('it does nothing if the action happens from the end of the relationship input if the input is full', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '+',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 1, selectionEnd: 1 },
+                            inputTypes.RELATIONSHIP,
+                            true,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                })
             })
-            it('moves back when the action happens from the start of the input even if the relationship text is not empty', async () => {
-                fakeDispatcher(
-                    calculateActionFromInput(
-                        'Backspace',
-                        '+',
-                        '',
-                        'noteId',
-                        'parentId',
-                        'previousNoteId',
-                        { selectionStart: 0, selectionEnd: 0 },
-                        inputTypes.TEXT,
-                        mockSlice
+            describe('and the note is not at the lowest level', () => {
+                it('moves back when the action happens from the start of the text input', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.TEXT,
+                            false,
+                            mockSlice
+                        )
                     )
-                )
-                expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
-                expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
-                    selectionStart: 999999,
-                    selectionEnd: 999999,
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
                 })
-                expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
-            })
-            it('moves back when the action happens from the start of the input even if the note text is not empty', async () => {
-                fakeDispatcher(
-                    calculateActionFromInput(
-                        'Backspace',
-                        '',
-                        'abc',
-                        'noteId',
-                        'parentId',
-                        'previousNoteId',
-                        { selectionStart: 0, selectionEnd: 0 },
-                        inputTypes.TEXT,
-                        mockSlice
+                it('moves back when the action happens from the start of the text input even if the relationship text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '+',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.TEXT,
+                            false,
+                            mockSlice
+                        )
                     )
-                )
-                expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
-                expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
-                    selectionStart: 999999,
-                    selectionEnd: 999999,
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
                 })
-                expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
-            })
-            it('deletes the note, moves back once and sets the cursor position to the end when the relationshipType and text is empty and the action happens from a relationship input', async () => {
-                fakeDispatcher(
-                    calculateActionFromInput(
-                        'Backspace',
-                        '',
-                        '',
-                        'noteId',
-                        'parentId',
-                        'previousNoteId',
-                        { selectionStart: 0, selectionEnd: 0 },
-                        inputTypes.RELATIONSHIP,
-                        mockSlice
+                it('moves back when the action happens from the start of the input even if the note text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            'abc',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.TEXT,
+                            false,
+                            mockSlice
+                        )
                     )
-                )
-                expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
-                expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
-                    selectionStart: 999999,
-                    selectionEnd: 999999,
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
+                        selectionStart: 999999,
+                        selectionEnd: 999999,
+                    })
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
                 })
-                expect(mockSlice.actions.deleteNote).toHaveBeenCalledWith('noteId')
-            })
-            it('it moves back when the cursor is at the start of a relationship input even if the relationship is not empty', async () => {
-                fakeDispatcher(
-                    calculateActionFromInput(
-                        'Backspace',
-                        '+',
-                        '',
-                        'noteId',
-                        'parentId',
-                        'previousNoteId',
-                        { selectionStart: 0, selectionEnd: 0 },
-                        inputTypes.RELATIONSHIP,
-                        mockSlice
+                it('does nothing when the action happens from the middle of the input if the note text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            'abc',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 1, selectionEnd: 1 },
+                            inputTypes.TEXT,
+                            false,
+                            mockSlice
+                        )
                     )
-                )
-                expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
-                expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
-                    selectionStart: 999999,
-                    selectionEnd: 999999,
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
                 })
-                expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
-            })
-            it('it moves back when the cursor is at the start of a relationship input even if the note text is not empty', async () => {
-                fakeDispatcher(
-                    calculateActionFromInput(
-                        'Backspace',
-                        '',
-                        'abc',
-                        'noteId',
-                        'parentId',
-                        'previousNoteId',
-                        { selectionStart: 0, selectionEnd: 0 },
-                        inputTypes.RELATIONSHIP,
-                        mockSlice
+                it('reduces the note nesting when the relationshipType and text is empty and the action happens from a relationship input', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.RELATIONSHIP,
+                            false,
+                            mockSlice
+                        )
                     )
-                )
-                expect(mockSlice.actions.moveCursorBack).toHaveBeenCalledTimes(1)
-                expect(mockSlice.actions.setCursorSelection).toHaveBeenCalledWith({
-                    selectionStart: 999999,
-                    selectionEnd: 999999,
+                    expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
                 })
-                expect(mockSlice.actions.deleteNote).not.toHaveBeenCalled()
+                it('it reduces the note nesting when the cursor is at the start of a relationship input even if the relationship is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '+',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.RELATIONSHIP,
+                            false,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
+                })
+                it('it reduces the note nesting when the cursor is at the start of a relationship input even if the note text is not empty', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '',
+                            'abc',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 0, selectionEnd: 0 },
+                            inputTypes.RELATIONSHIP,
+                            false,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
+                })
+                it('it does nothing when the cursor is at the end of a full relationship input', async () => {
+                    fakeDispatcher(
+                        calculateActionFromInput(
+                            'Backspace',
+                            '+',
+                            '',
+                            'noteId',
+                            'parentId',
+                            'previousNoteId',
+                            { selectionStart: 1, selectionEnd: 1 },
+                            inputTypes.RELATIONSHIP,
+                            false,
+                            mockSlice
+                        )
+                    )
+                    expect(mockSlice.actions.reduceNoteNesting).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
+                    expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
+                })
             })
         })
         describe('when key is Enter', () => {
@@ -173,6 +399,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 )
@@ -194,6 +421,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])
@@ -209,6 +437,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -229,6 +458,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])
@@ -246,6 +476,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 2, selectionEnd: 3 },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 )
@@ -270,6 +501,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 4, selectionEnd: 6 },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 )
@@ -294,6 +526,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])
@@ -309,6 +542,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -333,6 +567,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -357,6 +592,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])
@@ -374,6 +610,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -392,6 +629,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -410,6 +648,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 0, selectionEnd: 0 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -430,6 +669,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: 1, selectionEnd: 1 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])
@@ -448,6 +688,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: inputText.length, selectionEnd: inputText.length },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 )
@@ -469,6 +710,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: inputText.length - 2, selectionEnd: inputText.length - 2 },
                         inputTypes.TEXT,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])
@@ -485,6 +727,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: relInputText.length, selectionEnd: relInputText.length },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 )
@@ -506,6 +749,7 @@ describe('calculateActionFromInput', () => {
                         'previousNoteId',
                         { selectionStart: relInputText.length - 2, selectionEnd: relInputText.length - 2 },
                         inputTypes.RELATIONSHIP,
+                        false,
                         mockSlice
                     )
                 ).toEqual([])

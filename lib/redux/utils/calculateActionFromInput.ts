@@ -29,6 +29,7 @@ interface NoteSlice {
         moveDown: Function
         deleteNote: Function
         setNewTopicText: Function
+        reduceNoteNesting: Function
     }
 } //TODO - find a better way to keep this in sync with the slice actions
 export const calculateActionFromInput = (
@@ -40,6 +41,7 @@ export const calculateActionFromInput = (
     previousNoteId: string | null,
     cursorSelection: cursorSelectionType,
     inputType: inputTypes,
+    isCurrentTopicChild: boolean,
     noteSlice: Required<NoteSlice>
 ): ActionsListItem[] => {
     let actions: ActionsListItem[] = []
@@ -67,18 +69,42 @@ export const calculateActionFromInput = (
         }
         //Nest note unless it is the first child already
     } else if (key === 'Backspace') {
-        if (relationshipType === '' && noteText === '') {
-            if (inputType === inputTypes.TEXT) {
-                actions.push({ fn: noteSlice.actions.moveCursorBack, args: [] })
+        if (isCurrentTopicChild) {
+            if (relationshipType === '' && noteText === '') {
+                if (inputType === inputTypes.TEXT) {
+                    actions.push({ fn: noteSlice.actions.moveCursorBack, args: [] })
+                }
+                actions.push({ fn: noteSlice.actions.deleteNote, args: [noteId] })
             }
-            actions.push({ fn: noteSlice.actions.deleteNote, args: [noteId] })
-        }
-        if (cursorSelection.selectionEnd === 0 && cursorSelection.selectionStart === 0) {
-            actions.push({ fn: noteSlice.actions.moveCursorBack, args: [] })
-            actions.push({
-                fn: noteSlice.actions.setCursorSelection,
-                args: [{ selectionStart: 999999, selectionEnd: 999999 }],
-            })
+            if (cursorSelection.selectionEnd === 0 && cursorSelection.selectionStart === 0) {
+                actions.push({ fn: noteSlice.actions.moveCursorBack, args: [] })
+                actions.push({
+                    fn: noteSlice.actions.setCursorSelection,
+                    args: [{ selectionStart: 999999, selectionEnd: 999999 }],
+                })
+            }
+        } else {
+            if (
+                cursorSelection.selectionEnd === 0 &&
+                cursorSelection.selectionStart === 0 &&
+                inputType === inputTypes.RELATIONSHIP
+            ) {
+                actions.push({
+                    fn: noteSlice.actions.reduceNoteNesting,
+                    args: [{ oldParentId: parentId, newParentId: previousNoteId, targetNoteId: noteId }],
+                })
+            }
+            if (
+                cursorSelection.selectionEnd === 0 &&
+                cursorSelection.selectionStart === 0 &&
+                inputType === inputTypes.TEXT
+            ) {
+                actions.push({ fn: noteSlice.actions.moveCursorBack, args: [] })
+                actions.push({
+                    fn: noteSlice.actions.setCursorSelection,
+                    args: [{ selectionStart: 999999, selectionEnd: 999999 }],
+                })
+            }
         }
     } else if (key === 'ArrowUp') {
         actions.push({ fn: noteSlice.actions.moveUp, args: [] })
