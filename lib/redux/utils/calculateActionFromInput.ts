@@ -149,8 +149,6 @@ export const calculateActionFromTopicInput = (
         }
     } else if (key === 'ArrowRight') {
         let inputTextLength = noteText.length
-        console.log(cursorSelection)
-        console.log(inputTextLength)
         if (cursorSelection.selectionStart === inputTextLength && cursorSelection.selectionEnd === inputTextLength) {
             actions.push({
                 fn: noteSlice.actions.setCursorSelection,

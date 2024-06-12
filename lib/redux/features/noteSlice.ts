@@ -391,6 +391,10 @@ export const noteSlice = createAppSlice({
             const note = state.notesById[action.payload.noteId]
             note.text = action.payload.text
         }),
+        insertAtStartOfNoteText: create.reducer((state, action: PayloadAction<{ noteId: string; text: string }>) => {
+            const note = state.notesById[action.payload.noteId]
+            note.text = action.payload.text + note.text
+        }),
         updateRelationshipType: create.reducer(
             (
                 state,
@@ -506,6 +510,7 @@ export const {
     moveDown,
     moveUp,
     deleteNote,
+    insertAtStartOfNoteText,
 } = noteSlice.actions
 export const {
     selectNewTopicText,

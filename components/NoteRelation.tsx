@@ -10,6 +10,7 @@ import {
     selectNote,
     updateRelationshipType,
     setCursorSelection,
+    insertAtStartOfNoteText,
 } from '@/lib/redux/features/noteSlice'
 
 interface NoteProps {
@@ -33,10 +34,18 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
         if (value !== relationshipType) {
             dispatch(updateRelationshipType({ parentNoteId, noteId, relationshipType: value as NoteRelationTypeEnum }))
         }
-        //if something other than a relationship character is typed then move to the text input
+        //whatever is typed, move to the text input
         if ((value && newValue.length > 1) || newValue.length > 0) {
-            dispatch(setCursorSelection({ selectionStart: 0, selectionEnd: 0 }))
+            //if something other than a relationship character is typed then insert it at the beginning of the text input
+            let substringToInsert = newValue
+            if (['+', '-'].includes(newValue[0])) {
+                substringToInsert = newValue.slice(1)
+            }
             dispatch(moveCursorForward())
+            dispatch(insertAtStartOfNoteText({ noteId, text: substringToInsert }))
+            dispatch(
+                setCursorSelection({ selectionStart: substringToInsert.length, selectionEnd: substringToInsert.length })
+            )
         }
     }
     const handleKeyDown = (e: React.KeyboardEvent) => {

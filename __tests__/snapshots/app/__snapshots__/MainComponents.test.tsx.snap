@@ -7,6 +7,7 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
   >
     <input
       class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+      data-id="newTopic"
       placeholder="Add a new note..."
       type="text"
       value=""
@@ -52,8 +53,9 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
       class="bg-white p-4 rounded-lg shadow-md"
     >
       <input
+        data-id="01HZQD2SMCXCVT6FJNH18QPTZZ_topic"
         type="text"
-        value="NewnotNewnote"
+        value="New noteNew note"
       />
       <ul
         class="ml-2"
@@ -64,12 +66,14 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
           >
             <input
               class="pl-1"
+              data-id="01HZQD2SMCXCVT6FJNH18QPTZZ---01HZQD2SP0JXP893BPGSP74CDE_relationship"
               type="text"
               value="+"
             />
             <input
+              data-id="01HZQD2SMCXCVT6FJNH18QPTZZ---01HZQD2SP0JXP893BPGSP74CDE_text"
               type="text"
-              value="This note supports the Newnote topic"
+              value="This note supports the New note topic"
             />
           </span>
           <ul
@@ -82,12 +86,14 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
           >
             <input
               class="pl-1"
+              data-id="01HZQD2SMCXCVT6FJNH18QPTZZ---01HZQD2STJBSR81PQTAAFKGDVC_relationship"
               type="text"
               value="-"
             />
             <input
+              data-id="01HZQD2SMCXCVT6FJNH18QPTZZ---01HZQD2STJBSR81PQTAAFKGDVC_text"
               type="text"
-              value="This not opposes the Newnote topic"
+              value="This note opposes the New note topic"
             />
           </span>
           <ul
@@ -100,10 +106,12 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
           >
             <input
               class="pl-1"
+              data-id="01HZQD2SMCXCVT6FJNH18QPTZZ---01HZQD2SYTGQ337KWQGSVZZB5B_relationship"
               type="text"
               value=""
             />
             <input
+              data-id="01HZQD2SMCXCVT6FJNH18QPTZZ---01HZQD2SYTGQ337KWQGSVZZB5B_text"
               type="text"
               value="This note is related"
             />
@@ -117,10 +125,12 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
               >
                 <input
                   class="pl-1"
+                  data-id="01HZQD2SYTGQ337KWQGSVZZB5B---01HZQD2T2NG5P8HBNE2T1J7K2T_relationship"
                   type="text"
                   value="+"
                 />
                 <input
+                  data-id="01HZQD2SYTGQ337KWQGSVZZB5B---01HZQD2T2NG5P8HBNE2T1J7K2T_text"
                   type="text"
                   value="This note supports the related note"
                 />
@@ -137,14 +147,16 @@ exports[`renders homepage with e2e fixtures unchanged 1`] = `
       class="bg-white p-4 rounded-lg shadow-md"
     >
       <input
+        data-id="01HZQD2VQ2J66TP4R02G2A7JCN_topic"
         type="text"
-        value="Helloagain!"
+        value="Hello again!"
       />
     </div>
     <div
       class="bg-white p-4 rounded-lg shadow-md"
     >
       <input
+        data-id="f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5_topic"
         type="text"
         value="This is the root note"
       />
