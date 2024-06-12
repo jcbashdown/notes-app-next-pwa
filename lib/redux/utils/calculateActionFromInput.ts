@@ -91,7 +91,7 @@ export const calculateActionFromInput = (
             ) {
                 actions.push({
                     fn: noteSlice.actions.reduceNoteNesting,
-                    args: [{ oldParentId: parentId, newParentId: previousNoteId, targetNoteId: noteId }],
+                    args: [{ oldParentId: parentId, targetNoteId: noteId }],
                 })
             }
             if (

@@ -135,7 +135,7 @@ A new Note|Enter|
     + This note supports "a new Note"
     - This note opposes "a new Note"
         This is related to the opposing note|Tab|
-    This note is related to a new Note.`
+    |Backspace|This note is related to a new Note.`
 
 //returns the selector for the input with current focus or null
 const findFocusInput = async (page: any) => {

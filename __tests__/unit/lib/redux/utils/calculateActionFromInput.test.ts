@@ -321,6 +321,10 @@ describe('calculateActionFromInput', () => {
                         )
                     )
                     expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledWith({
+                        oldParentId: 'parentId',
+                        targetNoteId: 'noteId',
+                    })
                     expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
                     expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
                     expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
@@ -341,6 +345,10 @@ describe('calculateActionFromInput', () => {
                         )
                     )
                     expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledWith({
+                        oldParentId: 'parentId',
+                        targetNoteId: 'noteId',
+                    })
                     expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
                     expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
                     expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()
@@ -361,6 +369,10 @@ describe('calculateActionFromInput', () => {
                         )
                     )
                     expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledTimes(1)
+                    expect(mockSlice.actions.reduceNoteNesting).toHaveBeenCalledWith({
+                        oldParentId: 'parentId',
+                        targetNoteId: 'noteId',
+                    })
                     expect(mockSlice.actions.moveCursorBack).not.toHaveBeenCalled()
                     expect(mockSlice.actions.setCursorSelection).not.toHaveBeenCalled()
                     expect(mockSlice.actions.deleteNote).not.toHaveBeenCalledWith()

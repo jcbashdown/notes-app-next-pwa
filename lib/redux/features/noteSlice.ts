@@ -179,6 +179,25 @@ const buildNoteOrderForTopic = (state: NotesState, activeTopic: NoteDocType): Re
         return memo
     }, initialRenderOrder)
 }
+
+const findParentOfParentInRenderOrder = (state: NotesState, parentId: string, noteId: string): string | null => {
+    //get the index of the current note in the render order
+    const noteIndex = state.renderOrder.idToIndex[`${parentId}---${noteId}_relationship`]
+    //slice indexToId to get from the start to the noteIndex
+    const previousNotes = state.renderOrder.indexToId.slice(0, noteIndex)
+    //reverse the array to get the most recent note first
+    const reversedPreviousNotes = previousNotes.reverse()
+    //find the first identifier in the array with the format parentOfParentId---parentId
+    for (const id of reversedPreviousNotes) {
+        if (id.includes('---')) {
+            const parts = id.split('---')
+            if (parts[1].includes(parentId)) {
+                return parts[0]
+            }
+        }
+    }
+    return null
+}
 //TODO - Filter to only relations flowing from active topic. Probably need to do this in the db query. Load default number of levels to start? Can't be constructing the whole tree at once as this could get very big
 const buildNoteRelationMappings = (noteRelations: NoteRelationDocType[]): NoteRelationMappings => {
     const mappings = noteRelations.reduce<NoteRelationMappings>(
@@ -281,7 +300,44 @@ export const noteSlice = createAppSlice({
             }
         }),
         reduceNoteNesting: create.reducer(
-            (state, action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>) => {}
+            (state, action: PayloadAction<{ oldParentId: string; targetNoteId: string }>) => {
+                //TODO - test
+                const { oldParentId, targetNoteId } = action.payload
+                const newParentId = findParentOfParentInRenderOrder(state, oldParentId, targetNoteId)
+                if (!newParentId) {
+                    return
+                }
+                const existingRelationship = state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
+                //get the type of the existing relationship
+                const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
+                delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
+                let allRelationships = Object.values(state.noteRelationsById)
+                let { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships)
+                state.noteRelationsById = noteRelationsById
+                state.noteChildrenByParentId = noteChildrenByParentId
+                const parentPositionInOrder = state.noteChildrenByParentId[newParentId].find(
+                    (child) => child.childId === oldParentId
+                )?.order
+                const newPositionInOrder = parentPositionInOrder !== undefined ? parentPositionInOrder + 1 : 0
+
+                const newRelationship = initNewRelationship(newParentId, targetNoteId, newPositionInOrder)
+                newRelationship.relationshipType = relationshipType
+                const reorderedChildren = reorderChildren(state.noteChildrenByParentId[newParentId], newRelationship)
+                state.noteChildrenByParentId[newParentId] = reorderedChildren
+                allRelationships = Object.values(state.noteChildrenByParentId).reduce(
+                    (memo, val) => memo.concat(val),
+                    []
+                )
+                //update the state with the new relationships
+                ;({ noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships))
+                state.noteRelationsById = noteRelationsById
+                state.noteChildrenByParentId = noteChildrenByParentId
+
+                //re-calculate the render order in the current topic
+                if (state.currentNoteTopic) {
+                    state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                }
+            }
         ),
         nestNote: create.reducer(
             (state, action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>) => {
@@ -310,7 +366,6 @@ export const noteSlice = createAppSlice({
                 if (state.currentNoteTopic) {
                     state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
                 }
-                //TODO - delete when there is text should un-nest?
             }
         ),
         deleteNote: create.reducer((state, action: PayloadAction<string>) => {
