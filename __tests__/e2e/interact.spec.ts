@@ -147,16 +147,19 @@ const findFocusInput = async (page: any) => {
     }
     return page.locator(':focus')
 }
+async function getInputId(focusInput: any): Promise<string> {
+    return await focusInput?.evaluate((node: any) => node.getAttribute('data-id'))
+}
 async function loopUntilChangedOrTimeout(fn: Function, currentFocus: any = null) {
     console.log('detecting change')
     const timeout = 3000 // 1 second
     const interval = 100 // check every 100ms
     const startTime = Date.now()
 
-    const currentInputDataId = await currentFocus?.evaluate((node: any) => node.getAttribute('data-id'))
+    const currentInputDataId = await getInputId(currentFocus)
     while (Date.now() - startTime < timeout) {
         let result = await fn()
-        const newInputDataId = await result?.evaluate((node: any) => node.getAttribute('data-id'))
+        const newInputDataId = await getInputId(result)
 
         if (newInputDataId !== currentInputDataId) {
             console.log('selection changed')
@@ -183,14 +186,20 @@ test('test with simple note input', async ({ page }) => {
             focusInput.press(keyPress)
             console.log('pressed', keyPress)
         } else {
-            focusInput.press(keyPress[0])
-            console.log('filled', keyPress[0])
-            //The first character may change the focus
-            focusInput = await loopUntilChangedOrTimeout(async () => await findFocusInput(page), focusInput)
-            console.log(keyPress.slice(1))
-            focusInput.pressSequentially(keyPress.slice(1))
-            console.log('filled', keyPress.slice(1))
-            await page.waitForTimeout(2000)
+            if ((await getInputId(focusInput)).match(/topic/i)) {
+                focusInput.fill(keyPress)
+                console.log('filled topic', keyPress)
+                await page.waitForTimeout(300)
+            } else {
+                focusInput.pressSequentially(keyPress[0])
+                console.log('filled', keyPress[0])
+                //The first character may change the focus
+                focusInput = await loopUntilChangedOrTimeout(async () => await findFocusInput(page), focusInput)
+                console.log(keyPress.slice(1))
+                focusInput.pressSequentially(keyPress.slice(1))
+                console.log('filled', keyPress.slice(1))
+                await page.waitForTimeout(300)
+            }
         }
         if (FOCUS_CHANGERS.includes(keyPress)) {
             focusInput = await loopUntilChangedOrTimeout(async () => await findFocusInput(page), focusInput)
