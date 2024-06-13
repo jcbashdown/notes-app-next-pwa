@@ -42,6 +42,10 @@ export default class KeyPressesFromNoteGenerator {
                     //TODO - down with arrowright only makes sense from the start of an input. This approach won't work because the text you input on this line won't be the text you need to press through
                     if (item === 'downWithArrowRight' || item === 'upWithArrowLeft') {
                         memo = memo.concat(this.expandLeftAndRight(item, lineText))
+                    } else if (item.includes('backspaces')) {
+                        const num = parseInt(item.match(/\d+/)[0])
+                        memo = memo.concat(Array(num).fill('Backspace'))
+                        memo.push('FOCUS')
                     } else {
                         memo.push(item)
                         if (FOCUS_CHANGERS.includes(item)) {

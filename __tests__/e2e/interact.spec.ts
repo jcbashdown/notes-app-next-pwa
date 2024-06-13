@@ -159,18 +159,89 @@ test('test with simple note input', async ({ page }) => {
 })
 
 //For example...
+const aNewNote = 'A new Note'
+const thisNoteOpposes = '- This note opposes "a new Note"'
+const thisNoteIsRelatedToOpposing = 'This is related to the opposing note'
 const thisNoteSupports = '+ This note supports "a new Note"'
+const thisNoteIsRelatedToANewNote = 'This note is related to a new Note.'
 
 const complexNoteInput = `
-A new Note|Enter|
-    - This note opposes "a new Note"
-        This is related to the opposing note|Tab|upWithArrowLeft|ArrowUp|ArrowUp|
+${aNewNote}|Enter|
+    ${thisNoteOpposes}
+        ${thisNoteIsRelatedToOpposing}|Tab|upWithArrowLeft|ArrowUp|ArrowUp|
     ${thisNoteSupports}|ArrowRight|ArrowDown|
-    |Backspace|This note is related to a new Note.`
+    |Backspace|${thisNoteIsRelatedToANewNote}`
 
 test('test with complex note input', async ({ page }) => {
     await page.goto('http://localhost:3000/')
     await runNoteInput(complexNoteInput, page)
+
+    await page.click('#menuButton')
+    // Set up the download listener
+    const [download] = await Promise.all([
+        page.waitForEvent('download'), // Wait for the download event
+        page.click('#download-note-json'),
+    ])
+    // Wait for the download to complete
+    const downloadPath = await download.path()
+    const downloadFilePath = path.join(
+        __dirname,
+        'downloads/test-with-complex-note-input/',
+        path.basename(downloadPath)
+    )
+
+    // Save the downloaded file to a specific location
+    await download.saveAs(downloadFilePath)
+
+    // Read the downloaded file contents
+    const fileContents = fs.readFileSync(downloadFilePath, 'utf8')
+
+    // Assert the file contents
+    expect(
+        removeIds(
+            JSON.parse(fileContents).sort((a: any, b: any) => {
+                if (a.text < b.text) {
+                    return -1
+                }
+                if (a.text > b.text) {
+                    return 1
+                }
+                return 0
+            })
+        )
+    ).toEqual(
+        removeIds(
+            testWithSimpleNoteInput.sort((a: any, b: any) => {
+                if (a.text < b.text) {
+                    return -1
+                }
+                if (a.text > b.text) {
+                    return 1
+                }
+                return 0
+            })
+        )
+    )
+})
+
+const deletionsCount =
+    thisNoteIsRelatedToANewNote.length +
+    thisNoteSupports.length +
+    thisNoteIsRelatedToOpposing.length +
+    thisNoteOpposes.length +
+    4 //for the number of additional backspaces to move from an empty note to the note above via deletion
+
+const noteInputWithDeletions = `
+${aNewNote}|Enter|
+    ${thisNoteOpposes}
+        ${thisNoteIsRelatedToOpposing}|Tab|upWithArrowLeft|ArrowUp|ArrowUp|
+    ${thisNoteSupports}|ArrowRight|ArrowDown|
+    |Backspace|${thisNoteIsRelatedToANewNote}|backspaces(${deletionsCount})|`
+
+test.only('test with note input deletions', async ({ page }) => {
+    test.slow()
+    await page.goto('http://localhost:3000/')
+    await runNoteInput(noteInputWithDeletions, page)
 
     await page.click('#menuButton')
     // Set up the download listener

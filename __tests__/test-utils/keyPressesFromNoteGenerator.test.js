@@ -12,7 +12,7 @@ A new Note
     - This note opposes "a new Note"
         This is related to the opposing note|Tab|upWithArrowLeft|ArrowUp|
     + This note supports "a new Note"|downWithArrowRight|ArrowDown|ArrowDown|
-    |Backspace|This note is related to a new Note.
+    |Backspace|This note is related to a new Note.|backspaces(5)|
 `
 
 describe('keyPressesFromNoteGenerator', () => {
@@ -136,6 +136,12 @@ describe('keyPressesFromNoteGenerator', () => {
             'Backspace',
             'FOCUS',
             'This note is related to a new Note.',
+            'Backspace',
+            'Backspace',
+            'Backspace',
+            'Backspace',
+            'Backspace',
+            'FOCUS',
         ])
     })
 })
