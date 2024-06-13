@@ -1,5 +1,16 @@
 export const FOCUS_CHANGERS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Backspace']
 export const SINGLE_KEYPRESSES = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Tab', 'Backspace']
+export const NOT_LINE_TEXT = [
+    'upWithArrowLeft',
+    'downWithArrowRight',
+    'ArrowUp',
+    'ArrowDown',
+    'ArrowLeft',
+    'ArrowRight',
+    'Enter',
+    'Tab',
+    'Backspace',
+]
 
 export default class KeyPressesFromNoteGenerator {
     constructor() {
@@ -21,28 +32,35 @@ export default class KeyPressesFromNoteGenerator {
         let keyPresses = lines
             .reduce((memo, item) => {
                 if (item === '') return memo
-                const withTabs = item.replace(/\s{4}/g, '')
-                const withCommandsSplitOut = withTabs.split('|')
-                const lineText = withCommandsSplitOut[0]
+                const withoutIndent = item.replace(/\s{4}/g, '')
+                const withCommandsSplitOut = withoutIndent.split('|')
+                let lineText = ''
                 const withLeftAndRight = withCommandsSplitOut.reduce((memo, item) => {
+                    if (!NOT_LINE_TEXT.includes(item)) {
+                        lineText = item
+                    }
+                    //TODO - down with arrowright only makes sense from the start of an input. This approach won't work because the text you input on this line won't be the text you need to press through
                     if (item === 'downWithArrowRight' || item === 'upWithArrowLeft') {
                         memo = memo.concat(this.expandLeftAndRight(item, lineText))
                     } else {
                         memo.push(item)
+                        if (FOCUS_CHANGERS.includes(item)) {
+                            memo.push('FOCUS')
+                        }
                     }
                     return memo
                 }, [])
                 memo = memo.concat(withLeftAndRight)
                 memo.push('Enter')
+                memo.push('FOCUS')
                 return memo
             }, [])
             .filter((keyPress) => keyPress !== '')
         //remove the last keyPress if it's enter
-        const last = keyPresses.pop()
-        if (last === 'Enter') {
-            return keyPresses
+        const last = keyPresses.slice(-2)
+        if (last[0] === 'Enter') {
+            return keyPresses.slice(0, -2)
         } else {
-            keyPresses.push(last)
             return keyPresses
         }
     }
@@ -54,15 +72,18 @@ export default class KeyPressesFromNoteGenerator {
      */
     expandLeftAndRight(command, lineText) {
         let commandUnit = ''
+        let presses = null
         if (command === 'downWithArrowRight') {
             commandUnit = 'ArrowRight'
         } else {
             commandUnit = 'ArrowLeft'
         }
         if (lineText[0] === '+' || lineText[0] === '-') {
-            return Array(lineText.length).fill(commandUnit)
+            presses = Array(lineText.length).fill(commandUnit)
         } else {
-            return Array(lineText.length + 1).fill(commandUnit)
+            presses = Array(lineText.length + 1).fill(commandUnit)
         }
+        presses.push('FOCUS')
+        return presses
     }
 }
