@@ -19,8 +19,12 @@ export default function StoreProvider({ children, fixture = null }: { children: 
                     const { noteTopics } = initializationData
                     //TODO - remove this in future - user must select manually. Using
                     //it now so we don't have to implement selection yet
-                    storeRef.current!.dispatch(setNoteTopic(noteTopics[0].id))
-                    storeRef.current!.dispatch(setCursorPosition(0))
+                    storeRef
+                        .current!.dispatch(setNoteTopic(noteTopics[0].id))
+                        .unwrap()
+                        .then(() => {
+                            storeRef.current!.dispatch(setCursorPosition(0))
+                        })
                 })
         } else {
             storeRef.current
@@ -30,8 +34,12 @@ export default function StoreProvider({ children, fixture = null }: { children: 
                     const { noteTopics } = initializationData
                     //TODO - remove this in future - user must select manually. Using
                     //it now so we don't have to implement selection yet
-                    storeRef.current!.dispatch(setNoteTopic(noteTopics[0].id))
-                    storeRef.current!.dispatch(setCursorPosition(0))
+                    storeRef
+                        .current!.dispatch(setNoteTopic(noteTopics[0].id))
+                        .unwrap()
+                        .then(() => {
+                            storeRef.current!.dispatch(setCursorPosition(0))
+                        })
                 })
         }
     }

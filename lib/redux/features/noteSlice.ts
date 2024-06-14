@@ -256,9 +256,23 @@ export const noteSlice = createAppSlice({
         setCursorSelection: create.reducer((state, action: PayloadAction<cursorSelectionType | null>) => {
             state.cursorSelection = action.payload
         }),
-        setNoteTopic: create.reducer((state, action: PayloadAction<string>) => {
-            updateTopic(state, action.payload)
-        }),
+        setNoteTopic: create.asyncThunk<string, string>(
+            async (topicId) => {
+                return topicId
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<string>) => {
+                    state.status = 'idle'
+                    updateTopic(state, action.payload)
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
         setCursorPosition: create.reducer((state, action: PayloadAction<number>) => {
             setCursorPositionAndUpdateTopicIfNeeded(state, action.payload)
         }),
