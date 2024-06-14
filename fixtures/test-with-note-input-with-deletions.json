@@ -1,0 +1,61 @@
+[
+    {
+        "id": "1a2b3c4d-5e6f-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This note opposes the root note",
+        "topic": false,
+        "children": []
+    },
+    {
+        "id": "a0b1c2d3-e4f5-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This note is related to note 2",
+        "topic": false,
+        "children": []
+    },
+    {
+        "id": "a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This note supports the root note",
+        "topic": false,
+        "children": [
+            {
+                "id": "a0b1c2d3-e4f5-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "",
+                "order": 0
+            }
+        ]
+    },
+    {
+        "id": "f2fb0a80-9f6a-4b5c-8b4c-c5e5e5d5f5d5",
+        "text": "This is the root note",
+        "topic": true,
+        "children": [
+            {
+                "id": "a1b2c3d4-e5f6-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "+",
+                "order": 0
+            },
+            {
+                "id": "1a2b3c4d-5e6f-4b5c-8b4c-c5e5e5d5f5d5",
+                "relationshipType": "-",
+                "order": 1
+            }
+        ]
+    },
+    {
+        "id": "01J0AX4KZJB0BH3GCKBRTKJB3H",
+        "text": "A new Note",
+        "topic": true,
+        "children": [
+            {
+                "id": "01J0AX4QPN434HAE18ADS8W3GX",
+                "relationshipType": "",
+                "order": 0
+            }
+        ]
+    },
+    {
+        "id": "01J0AX4QPN434HAE18ADS8W3GX",
+        "text": "A whole new note",
+        "topic": false,
+        "children": []
+    }
+]

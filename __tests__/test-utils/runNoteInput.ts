@@ -1,35 +1,33 @@
 import { Page } from 'playwright'
-import KeyPressesFromNoteGenerator, {
-    FOCUS_CHANGERS,
-    SINGLE_KEYPRESSES,
-} from '@/__tests__/test-utils/keyPressesFromNoteGenerator'
+import KeyPressesFromNoteGenerator, { SINGLE_KEYPRESSES } from '@/__tests__/test-utils/keyPressesFromNoteGenerator'
+//TODO - this should be a class now
+let currentInputDataId = ''
 //returns the selector for the input with current focus or null
 const findFocusInput = async (page: any) => {
-    let focusInput = await page.evaluateHandle(() => document.activeElement)
+    let focusInput = page.locator(':focus')
     const tagName = await focusInput.evaluate((node: any) => node.tagName.toLowerCase())
 
     if (tagName !== 'input' && tagName !== 'textarea') {
         focusInput = null
     }
-    return page.locator(':focus')
+    return focusInput
 }
 async function getInputId(focusInput: any): Promise<string> {
     return await focusInput?.evaluate((node: any) => node.getAttribute('data-id'))
 }
-async function loopUntilChangedOrTimeout(fn: Function, currentFocus: any = null) {
+async function loopUntilChangedOrTimeout(currentFocus: any = null): Promise<boolean> {
     console.log('detecting change')
     const timeout = 3000 // 1 second
     const interval = 100 // check every 100ms
     const startTime = Date.now()
 
-    const currentInputDataId = await getInputId(currentFocus)
     while (Date.now() - startTime < timeout) {
-        let result = await fn()
-        const newInputDataId = await getInputId(result)
+        const newInputDataId = await getInputId(currentFocus)
 
         if (newInputDataId !== currentInputDataId) {
+            currentInputDataId = newInputDataId
             console.log('selection changed')
-            return result
+            return true
         }
 
         // Wait for the specified interval before checking again
@@ -38,11 +36,12 @@ async function loopUntilChangedOrTimeout(fn: Function, currentFocus: any = null)
 
     // Return the existing focus which may be null or may just not have changed
     console.log('selection unchanged')
-    return currentFocus
+    return false
 }
 
 export default async function runNoteInput(noteInput: string, page: Page) {
-    let focusInput = await loopUntilChangedOrTimeout(async () => await findFocusInput(page))
+    const focusInput = await findFocusInput(page)
+    await loopUntilChangedOrTimeout(focusInput)
     const keyPressesFromNoteGenerator = new KeyPressesFromNoteGenerator()
     keyPressesFromNoteGenerator.setNote(noteInput)
     const keyPresses = keyPressesFromNoteGenerator.getKeyPresses()
@@ -61,13 +60,13 @@ export default async function runNoteInput(noteInput: string, page: Page) {
                 focusInput.pressSequentially(keyPress[0])
                 console.log('filled', keyPress[0])
                 //The first character may change the focus
-                focusInput = await loopUntilChangedOrTimeout(async () => await findFocusInput(page), focusInput)
+                await loopUntilChangedOrTimeout(focusInput)
                 focusInput.pressSequentially(keyPress.slice(1))
                 console.log('filled', keyPress.slice(1))
                 await page.waitForTimeout(200)
             }
         } else {
-            focusInput = await loopUntilChangedOrTimeout(async () => await findFocusInput(page), focusInput)
+            await loopUntilChangedOrTimeout(focusInput)
         }
     }
 }

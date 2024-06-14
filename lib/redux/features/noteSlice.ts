@@ -199,17 +199,24 @@ const findParentOfParentInRenderOrder = (state: NotesState, parentId: string, no
     return null
 }
 //TODO - Filter to only relations flowing from active topic. Probably need to do this in the db query. Load default number of levels to start? Can't be constructing the whole tree at once as this could get very big
-const buildNoteRelationMappings = (noteRelations: NoteRelationDocType[]): NoteRelationMappings => {
-    const mappings = noteRelations.reduce<NoteRelationMappings>(
-        (memo, noteRelation) => {
-            memo['noteRelationsById'][noteRelation.id] = noteRelation
-            memo['noteChildrenByParentId'][noteRelation.parentId] =
-                memo['noteChildrenByParentId'][noteRelation.parentId] ?? []
-            memo['noteChildrenByParentId'][noteRelation.parentId].push(noteRelation)
-            return memo
-        },
-        { noteRelationsById: {}, noteChildrenByParentId: {} }
-    )
+const buildNoteRelationMappings = (
+    noteRelations: NoteRelationDocType[],
+    currentTopicId: string | null
+): NoteRelationMappings => {
+    const initialMappings: NoteRelationMappings = {
+        noteRelationsById: {},
+        noteChildrenByParentId: {},
+    }
+    if (currentTopicId) {
+        initialMappings.noteChildrenByParentId[currentTopicId] = []
+    }
+    const mappings = noteRelations.reduce<NoteRelationMappings>((memo, noteRelation) => {
+        memo['noteRelationsById'][noteRelation.id] = noteRelation
+        memo['noteChildrenByParentId'][noteRelation.parentId] =
+            memo['noteChildrenByParentId'][noteRelation.parentId] ?? []
+        memo['noteChildrenByParentId'][noteRelation.parentId].push(noteRelation)
+        return memo
+    }, initialMappings)
     //not very efficient but we don't expect a lot of sub notes in a topic (later we will limit the depth or optimize)
     return {
         ...mappings,
@@ -312,7 +319,10 @@ export const noteSlice = createAppSlice({
                 const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
                 delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
                 let allRelationships = Object.values(state.noteRelationsById)
-                let { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships)
+                let { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                    allRelationships,
+                    state.currentNoteTopic
+                )
                 state.noteRelationsById = noteRelationsById
                 state.noteChildrenByParentId = noteChildrenByParentId
                 const parentPositionInOrder = state.noteChildrenByParentId[newParentId].find(
@@ -329,7 +339,10 @@ export const noteSlice = createAppSlice({
                     []
                 )
                 //update the state with the new relationships
-                ;({ noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships))
+                ;({ noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                    allRelationships,
+                    state.currentNoteTopic
+                ))
                 state.noteRelationsById = noteRelationsById
                 state.noteChildrenByParentId = noteChildrenByParentId
 
@@ -359,7 +372,10 @@ export const noteSlice = createAppSlice({
                     order: 0,
                 })
                 //update the state with the new relationships
-                const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships)
+                const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                    allRelationships,
+                    state.currentNoteTopic
+                )
                 state.noteRelationsById = noteRelationsById
                 state.noteChildrenByParentId = noteChildrenByParentId
                 //The cursor should not move but we should recalculate the order any way so position ids stay in sync.
@@ -383,7 +399,10 @@ export const noteSlice = createAppSlice({
                 []
             )
             //update the state with the new relationships
-            const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships)
+            const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                allRelationships,
+                state.currentNoteTopic
+            )
             state.noteRelationsById = noteRelationsById
             state.noteChildrenByParentId = noteChildrenByParentId
 
@@ -435,7 +454,10 @@ export const noteSlice = createAppSlice({
                 []
             )
             //update the state with the new relationships
-            const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships)
+            const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                allRelationships,
+                state.currentNoteTopic
+            )
             state.noteRelationsById = noteRelationsById
             state.noteChildrenByParentId = noteChildrenByParentId
 
@@ -468,7 +490,10 @@ export const noteSlice = createAppSlice({
                 const allRelationships = Object.values(state.noteRelationsById)
                 allRelationships.push(existingRelationship)
                 //update the state with the new relationships
-                const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(allRelationships)
+                const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                    allRelationships,
+                    state.currentNoteTopic
+                )
                 state.noteRelationsById = noteRelationsById
                 state.noteChildrenByParentId = noteChildrenByParentId
             }
@@ -492,7 +517,8 @@ export const noteSlice = createAppSlice({
                         return memo
                     }, {})
                     const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                        noteRelations as NoteRelationDocType[]
+                        noteRelations as NoteRelationDocType[],
+                        state.currentNoteTopic
                     )
                     state.noteRelationsById = noteRelationsById
                     state.noteChildrenByParentId = noteChildrenByParentId
@@ -525,7 +551,8 @@ export const noteSlice = createAppSlice({
                         return memo
                     }, {})
                     const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                        noteRelations as NoteRelationDocType[]
+                        noteRelations as NoteRelationDocType[],
+                        state.currentNoteTopic
                     )
                     state.noteRelationsById = noteRelationsById
                     state.noteChildrenByParentId = noteChildrenByParentId

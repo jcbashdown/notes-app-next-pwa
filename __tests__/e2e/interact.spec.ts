@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test'
 import fs from 'fs'
 import path from 'path'
+import runNoteInput from '@/__tests__/test-utils/runNoteInput'
 import e2eTestFixture from '@/fixtures/e2e-test-fixture.json'
 import testWithSimpleNoteInput from '@/fixtures/test-with-simple-note-input.json'
-import runNoteInput from '@/__tests__/test-utils/runNoteInput'
+import testWithNoteInputWithDeletions from '@/fixtures/test-with-note-input-with-deletions.json'
 
 function removeIds(json: any): any {
     if (Array.isArray(json)) {
@@ -229,16 +230,18 @@ const deletionsCount =
     thisNoteSupports.length +
     thisNoteIsRelatedToOpposing.length +
     thisNoteOpposes.length +
-    4 //for the number of additional backspaces to move from an empty note to the note above via deletion
+    6 //for the number of additional backspaces to move from an empty note to the note above via deletion
 
+const aWholeNewNote = 'A whole new note'
 const noteInputWithDeletions = `
 ${aNewNote}|Enter|
     ${thisNoteOpposes}
         ${thisNoteIsRelatedToOpposing}|Tab|upWithArrowLeft|ArrowUp|ArrowUp|
     ${thisNoteSupports}|ArrowRight|ArrowDown|
-    |Backspace|${thisNoteIsRelatedToANewNote}|backspaces(${deletionsCount})|`
+    |Backspace|${thisNoteIsRelatedToANewNote}|backspaces(${deletionsCount})
+    ${aWholeNewNote}`
 
-test.only('test with note input deletions', async ({ page }) => {
+test('test with note input deletions', async ({ page }) => {
     test.slow()
     await page.goto('http://localhost:3000/')
     await runNoteInput(noteInputWithDeletions, page)
@@ -253,7 +256,7 @@ test.only('test with note input deletions', async ({ page }) => {
     const downloadPath = await download.path()
     const downloadFilePath = path.join(
         __dirname,
-        'downloads/test-with-complex-note-input/',
+        'downloads/test-with-note-input-with-deletions/',
         path.basename(downloadPath)
     )
 
@@ -278,7 +281,7 @@ test.only('test with note input deletions', async ({ page }) => {
         )
     ).toEqual(
         removeIds(
-            testWithSimpleNoteInput.sort((a: any, b: any) => {
+            testWithNoteInputWithDeletions.sort((a: any, b: any) => {
                 if (a.text < b.text) {
                     return -1
                 }
