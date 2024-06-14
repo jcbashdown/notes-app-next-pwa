@@ -15,10 +15,8 @@ import noteService from '@/lib/rxdb/service/noteService'
 import noteRelationService from '@/lib/rxdb/service/noteRelationService'
 import { extractNoteRelations, extractNotes } from '@/fixtures/notes'
 
-const { fetchNotesAsJson, fetchNoteTopicsAsJson, bulkInsertNotes } = noteService
+const { fetchNotesAsJson, fetchNoteTopicsAsJson, bulkInsertNotes, noteById } = noteService
 const { fetchNoteRelationsAsJson, bulkInsertNoteRelations } = noteRelationService
-
-const addNoteToRxDB = noteService.addNote
 
 interface AppInitData {
     notes: NoteDocType[]
@@ -255,14 +253,14 @@ export const noteSlice = createAppSlice({
         setNewTopicText: create.reducer((state, action: PayloadAction<string>) => {
             state.newTopicText = action.payload
         }),
+        setCursorSelection: create.reducer((state, action: PayloadAction<cursorSelectionType | null>) => {
+            state.cursorSelection = action.payload
+        }),
         setNoteTopic: create.reducer((state, action: PayloadAction<string>) => {
             updateTopic(state, action.payload)
         }),
         setCursorPosition: create.reducer((state, action: PayloadAction<number>) => {
             setCursorPositionAndUpdateTopicIfNeeded(state, action.payload)
-        }),
-        setCursorSelection: create.reducer((state, action: PayloadAction<cursorSelectionType | null>) => {
-            state.cursorSelection = action.payload
         }),
         moveCursorBack: create.reducer((state) => {
             if (state.cursorPosition !== null) {
