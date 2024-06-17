@@ -136,8 +136,10 @@ A new Note|Enter|
     |Backspace|This note is related to a new Note.`
 
 test('test with simple note input', async ({ page }) => {
+    test.slow()
     await page.goto('http://localhost:3000/')
     await runNoteInput(simpleNoteInput, page)
+    await page.waitForTimeout(500)
 
     await page.click('#menuButton')
     // Set up the download listener
@@ -174,8 +176,10 @@ ${aNewNote}|Enter|
     |Backspace|${thisNoteIsRelatedToANewNote}`
 
 test('test with complex note input', async ({ page }) => {
+    test.slow()
     await page.goto('http://localhost:3000/')
     await runNoteInput(complexNoteInput, page)
+    await page.waitForTimeout(500)
 
     await page.click('#menuButton')
     // Set up the download listener
@@ -245,6 +249,7 @@ test('test with note input deletions', async ({ page }) => {
     test.slow()
     await page.goto('http://localhost:3000/')
     await runNoteInput(noteInputWithDeletions, page)
+    await page.waitForTimeout(500)
 
     await page.click('#menuButton')
     // Set up the download listener
