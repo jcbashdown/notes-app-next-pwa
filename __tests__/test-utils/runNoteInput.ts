@@ -50,7 +50,7 @@ export default async function runNoteInput(noteInput: string, page: Page) {
             focusInput.press(keyPress)
             console.log('pressed', keyPress)
             //chrome seems to miss keypresses sometimes if you have loads of ArrowRight (or ArrowLeft?) in a row.
-            await page.waitForTimeout(20)
+            await page.waitForTimeout(10)
         } else if (keyPress !== 'FOCUS') {
             if ((await getInputId(focusInput)).match(/topic/i)) {
                 focusInput.fill(keyPress)
