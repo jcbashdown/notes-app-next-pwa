@@ -1,17 +1,20 @@
+// NewTopic.tsx
 'use client'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
 import { useAppDispatch, useAppSelector } from '@/lib/redux/hooks'
 import { calculateActionFromNewTopicInput } from '@/lib/redux/utils/calculateActionFromInput'
 import { noteSlice, selectNewTopicText, setNewTopicText } from '@/lib/redux/features/noteSlice'
 import { adjustWhitespace } from '@/lib/helpers/textHelpers'
+import useOrderedDispatch from '@/lib/hooks/useOrderedDispatch'
 
 export default function NewTopic() {
     const { handleFocus, registerInputRef, handleSelect } = useCursorFocus()
     const newTopicText = useAppSelector(selectNewTopicText)
 
     const dispatch = useAppDispatch()
+    const orderedDispatch = useOrderedDispatch(dispatch)
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = async (e: React.KeyboardEvent) => {
         //DRY up with Note
         const target = e.target as HTMLInputElement
         const { selectionStart, selectionEnd } = target
@@ -29,17 +32,14 @@ export default function NewTopic() {
             noteSlice
         )
         for (const fnMap of actionFunctions) {
-            if (fnMap.args.length) {
-                dispatch(fnMap.fn(...fnMap.args))
-            } else {
-                dispatch(fnMap.fn())
-            }
+            orderedDispatch(fnMap.fn, fnMap.args)
         }
     }
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = adjustWhitespace(e.target.value)
         if (value !== newTopicText) {
-            dispatch(setNewTopicText(value))
+            orderedDispatch(setNewTopicText, [value])
         }
     }
 

@@ -1,5 +1,4 @@
-// Note.tsx
-//import { useAppDispatch } from '@/lib/redux/hooks'
+// NoteRelation.tsx
 import { NoteRelationTypeEnum } from '@/lib/rxdb/types/noteTypes'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
 import { calculateActionFromInput, inputTypes } from '@/lib/redux/utils/calculateActionFromInput'
@@ -13,6 +12,7 @@ import {
     insertAtStartOfNoteText,
     selectIsCurrentTopicChild,
 } from '@/lib/redux/features/noteSlice'
+import useOrderedDispatch from '@/lib/hooks/useOrderedDispatch'
 
 interface NoteProps {
     noteId: string
@@ -29,12 +29,16 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
     const isCurrentTopicChild = useAppSelector((state) => selectIsCurrentTopicChild(state, noteId))
     const dispatch = useAppDispatch()
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const orderedDispatch = useOrderedDispatch(dispatch)
+
+    const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         let newValue = e.target.value
         //filter value to only include valid options ['', '+', '-']
         let value = newValue.trim().replace(/[^+-]/g, '')[0] || ''
         if (value !== relationshipType) {
-            dispatch(updateRelationshipType({ parentNoteId, noteId, relationshipType: value as NoteRelationTypeEnum }))
+            orderedDispatch(updateRelationshipType, [
+                { parentNoteId, noteId, relationshipType: value as NoteRelationTypeEnum },
+            ])
         }
         //whatever is typed, move to the text input
         if ((value && newValue.length > 1) || newValue.length > 0) {
@@ -43,14 +47,15 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
             if (['+', '-'].includes(newValue[0])) {
                 substringToInsert = newValue.slice(1)
             }
-            dispatch(moveCursorForward())
-            dispatch(insertAtStartOfNoteText({ noteId, text: substringToInsert }))
-            dispatch(
-                setCursorSelection({ selectionStart: substringToInsert.length, selectionEnd: substringToInsert.length })
-            )
+            orderedDispatch(moveCursorForward, [])
+            orderedDispatch(insertAtStartOfNoteText, [{ noteId, text: substringToInsert }])
+            orderedDispatch(setCursorSelection, [
+                { selectionStart: substringToInsert.length, selectionEnd: substringToInsert.length },
+            ])
         }
     }
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+
+    const handleKeyDown = async (e: React.KeyboardEvent) => {
         //TODO - dry this up with Note keydown
         const target = e.target as HTMLInputElement
         const { selectionStart, selectionEnd } = target
@@ -76,13 +81,10 @@ const NoteRelation: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipT
             noteSlice
         )
         for (const fnMap of actionFunctions) {
-            if (fnMap.args.length) {
-                dispatch(fnMap.fn(...fnMap.args))
-            } else {
-                dispatch(fnMap.fn())
-            }
+            orderedDispatch(fnMap.fn, fnMap.args)
         }
     }
+
     return (
         <input
             type="text"

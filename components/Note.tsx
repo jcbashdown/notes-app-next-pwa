@@ -1,10 +1,11 @@
 // Note.tsx
+import React from 'react'
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
 import { noteSlice, selectNote, updateNoteText, selectIsCurrentTopicChild } from '@/lib/redux/features/noteSlice'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
 import { adjustWhitespace } from '@/lib/helpers/textHelpers'
-
 import { calculateActionFromInput, inputTypes } from '@/lib/redux/utils/calculateActionFromInput'
+import useOrderedDispatch from '@/lib/hooks/useOrderedDispatch'
 
 interface NoteProps {
     noteId: string
@@ -18,17 +19,16 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
     const inputIdentifier = `${parentNoteId}---${noteId}_text`
 
     const dispatch = useAppDispatch()
-    //TODO - understand why I don't need to specify the type of state even in
-    //strict mode
     const note = useAppSelector((state) => selectNote(state, noteId))
     const isCurrentTopicChild = useAppSelector((state) => selectIsCurrentTopicChild(state, noteId))
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const orderedDispatch = useOrderedDispatch(dispatch)
+
+    const handleKeyDown = async (e: React.KeyboardEvent) => {
         const target = e.target as HTMLInputElement
         const { selectionStart, selectionEnd } = target
         const newText = adjustWhitespace(target.value)
         const key = e.key
-        console.log('key', key)
         if (['Enter', 'Tab', 'ArrowDown', 'ArrowUp'].includes(key)) {
             e.preventDefault()
         } else if (key === 'Backspace' && selectionStart === 0 && selectionEnd === 0) {
@@ -49,18 +49,14 @@ const Note: React.FC<NoteProps> = ({ noteId, parentNoteId, relationshipType, pre
             noteSlice
         )
         for (const fnMap of actionFunctions) {
-            if (fnMap.args.length) {
-                dispatch(fnMap.fn(...fnMap.args))
-            } else {
-                dispatch(fnMap.fn())
-            }
+            orderedDispatch(fnMap.fn, fnMap.args)
         }
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = adjustWhitespace(e.target.value)
         if (value !== note.text) {
-            dispatch(updateNoteText({ noteId, text: value }))
+            orderedDispatch(updateNoteText, [{ noteId, text: value }])
         }
     }
 

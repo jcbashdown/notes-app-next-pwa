@@ -250,12 +250,40 @@ export const noteSlice = createAppSlice({
     name: 'noteSlice',
     initialState,
     reducers: (create) => ({
-        setNewTopicText: create.reducer((state, action: PayloadAction<string>) => {
-            state.newTopicText = action.payload
-        }),
-        setCursorSelection: create.reducer((state, action: PayloadAction<cursorSelectionType | null>) => {
-            state.cursorSelection = action.payload
-        }),
+        setNewTopicText: create.asyncThunk<string, string>(
+            async (topicText) => {
+                return topicText
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<string>) => {
+                    state.status = 'idle'
+                    state.newTopicText = action.payload
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        setCursorSelection: create.asyncThunk<cursorSelectionType | null, cursorSelectionType | null>(
+            async (cursorSelection) => {
+                return cursorSelection
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<cursorSelectionType | null>) => {
+                    state.status = 'idle'
+                    state.cursorSelection = action.payload
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
         setNoteTopic: create.asyncThunk<string, string>(
             async (topicId) => {
                 return topicId
@@ -273,241 +301,412 @@ export const noteSlice = createAppSlice({
                 },
             }
         ),
-        setCursorPosition: create.reducer((state, action: PayloadAction<number>) => {
-            setCursorPositionAndUpdateTopicIfNeeded(state, action.payload)
-        }),
-        moveCursorBack: create.reducer((state) => {
-            if (state.cursorPosition !== null) {
-                let newCursorPosition = state.cursorPosition - 1
-                if (newCursorPosition < 0) {
-                    newCursorPosition = 0
-                }
-                setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
-            }
-        }),
-        moveCursorForward: create.reducer((state) => {
-            if (state.cursorPosition !== null) {
-                let newCursorPosition = state.cursorPosition + 1
-                if (state.renderOrder.indexToId.length <= newCursorPosition) {
-                    newCursorPosition = state.renderOrder.indexToId.length - 1
-                }
-                setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
-            }
-        }),
-        moveDown: create.reducer((state) => {
-            if (state.cursorPosition !== null) {
-                let newCursorPosition = state.cursorPosition + 2
-                if (state.renderOrder.indexToId.length <= newCursorPosition) {
-                    newCursorPosition = state.renderOrder.indexToId.length - 1
-                }
-                setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
-            }
-        }),
-        moveUp: create.reducer((state) => {
-            if (state.cursorPosition !== null) {
-                let newCursorPosition: number
-                //if it's two then it's the first child input - only move back on
-                if (state.cursorPosition <= 2) {
-                    newCursorPosition = state.cursorPosition - 1
-                } else {
-                    newCursorPosition = state.cursorPosition - 2
-                }
-                if (newCursorPosition < 0) {
-                    newCursorPosition = 0
-                }
-                setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
-            }
-        }),
-        reduceNoteNesting: create.reducer(
-            (state, action: PayloadAction<{ oldParentId: string; targetNoteId: string }>) => {
-                //TODO - test
-                const { oldParentId, targetNoteId } = action.payload
-                const newParentId = findParentOfParentInRenderOrder(state, oldParentId, targetNoteId)
-                if (!newParentId) {
-                    return
-                }
-                const existingRelationship = state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
-                //get the type of the existing relationship
-                const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
-                delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
-                let allRelationships = Object.values(state.noteRelationsById)
-                let { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                    allRelationships,
-                    state.currentNoteTopic
-                )
-                state.noteRelationsById = noteRelationsById
-                state.noteChildrenByParentId = noteChildrenByParentId
-                const parentPositionInOrder = state.noteChildrenByParentId[newParentId].find(
-                    (child) => child.childId === oldParentId
-                )?.order
-                const newPositionInOrder = parentPositionInOrder !== undefined ? parentPositionInOrder + 1 : 0
-
-                const newRelationship = initNewRelationship(newParentId, targetNoteId, newPositionInOrder)
-                newRelationship.relationshipType = relationshipType
-                const reorderedChildren = reorderChildren(state.noteChildrenByParentId[newParentId], newRelationship)
-                state.noteChildrenByParentId[newParentId] = reorderedChildren
-                allRelationships = Object.values(state.noteChildrenByParentId).reduce(
-                    (memo, val) => memo.concat(val),
-                    []
-                )
-                //update the state with the new relationships
-                ;({ noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                    allRelationships,
-                    state.currentNoteTopic
-                ))
-                state.noteRelationsById = noteRelationsById
-                state.noteChildrenByParentId = noteChildrenByParentId
-
-                //re-calculate the render order in the current topic
-                if (state.currentNoteTopic) {
-                    state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
-                }
-            }
-        ),
-        nestNote: create.reducer(
-            (state, action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>) => {
-                //TODO - test
-                //TODO - consider making this separate composable actions in cases where we don't need return values for the next action
-                //Then the action calculator can do more
-                const { oldParentId, newParentId, targetNoteId } = action.payload
-                const existingRelationship = state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
-                //get the type of the existing relationship
-                const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
-                delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
-                //get a list of all relationships regardless of parent or child
-                const allRelationships = Object.values(state.noteRelationsById)
-                allRelationships.push({
-                    id: `${newParentId}-${targetNoteId}`,
-                    parentId: newParentId,
-                    childId: targetNoteId,
-                    relationshipType,
-                    order: 0,
-                })
-                //update the state with the new relationships
-                const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                    allRelationships,
-                    state.currentNoteTopic
-                )
-                state.noteRelationsById = noteRelationsById
-                state.noteChildrenByParentId = noteChildrenByParentId
-                //The cursor should not move but we should recalculate the order any way so position ids stay in sync.
-                if (state.currentNoteTopic) {
-                    state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
-                }
-            }
-        ),
-        deleteNote: create.reducer((state, action: PayloadAction<string>) => {
-            const noteToDeleteId = action.payload
-            delete state.noteChildrenByParentId[noteToDeleteId]
-            //TODO - Do we need a parent by child map? Should we just use rxdb directly?
-            const allRelationships = Object.keys(state.noteRelationsById).reduce(
-                (memo: NoteRelationDocType[], key: string): NoteRelationDocType[] => {
-                    if (!key.includes(noteToDeleteId)) {
-                        const relationshipToKeep = state.noteRelationsById[key]
-                        memo.push(relationshipToKeep)
-                    }
-                    return memo
+        setCursorPosition: create.asyncThunk<number, number>(
+            async (position) => {
+                return position
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
                 },
-                []
-            )
-            //update the state with the new relationships
-            const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                allRelationships,
-                state.currentNoteTopic
-            )
-            state.noteRelationsById = noteRelationsById
-            state.noteChildrenByParentId = noteChildrenByParentId
-
-            //TODO - delete from note topics if topic and set currentNoteTopic to null if it's the current one
-            if (state.notesById[noteToDeleteId].topic) {
-                state.noteTopics = state.noteTopics.filter((topic) => topic.id !== noteToDeleteId)
+                fulfilled: (state, action: PayloadAction<number>) => {
+                    state.status = 'idle'
+                    setCursorPositionAndUpdateTopicIfNeeded(state, action.payload)
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
             }
-            //if it's the current topic then set current topic to null
-            if (state.currentNoteTopic === noteToDeleteId) {
-                state.currentNoteTopic = null
-            }
-            delete state.notesById[noteToDeleteId]
-            //re-calculate the render order in the current topic
-            if (state.currentNoteTopic) {
-                state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
-            }
-        }),
-        addAndSwitchToTopicNote: create.reducer((state, action: PayloadAction<string>) => {
-            const newTopic = initTopic(action.payload)
-            state.notesById[newTopic.id] = newTopic
-            //TODO - add created and updated at and sort by that. Later other things
-            state.noteTopics.unshift(newTopic)
-            state.currentNoteTopic = newTopic.id
-            state.renderOrder = buildNoteOrderForTopic(state, newTopic)
-
-            state.noteChildrenByParentId[newTopic.id] = []
-        }),
-        addEmptyNote: create.reducer((state, action: PayloadAction<string>) => {
-            const parentId = action.payload
-
-            const newPositionInOrder = calculatePositionInOrder(state, parentId)
-            const currentNoteAtPosition = state.noteChildrenByParentId[parentId].find(
-                (child) => child.order === newPositionInOrder
-            )
-            const childAtPositionEmpty = currentNoteAtPosition
-                ? state.notesById[currentNoteAtPosition?.childId]?.text === ''
-                : false
-            if (childAtPositionEmpty) {
-                return
-            }
-
-            const emptyNote = initEmptyNote()
-            state.notesById[emptyNote.id] = emptyNote
-            const newRelationship = initNewRelationship(parentId, emptyNote.id, newPositionInOrder)
-            const reorderedChildren = reorderChildren(state.noteChildrenByParentId[parentId], newRelationship)
-            state.noteChildrenByParentId[parentId] = reorderedChildren
-            const allRelationships = Object.values(state.noteChildrenByParentId).reduce(
-                (memo, val) => memo.concat(val),
-                []
-            )
-            //update the state with the new relationships
-            const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                allRelationships,
-                state.currentNoteTopic
-            )
-            state.noteRelationsById = noteRelationsById
-            state.noteChildrenByParentId = noteChildrenByParentId
-
-            //re-calculate the render order in the current topic
-            if (state.currentNoteTopic) {
-                state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
-            }
-            //TODO - refactor to store relationships separate to notes so they can be edited in once place (not by searching notes and doing the edit in two places)?
-        }),
-        updateNoteText: create.reducer((state, action: PayloadAction<{ noteId: string; text: string }>) => {
-            const note = state.notesById[action.payload.noteId]
-            note.text = action.payload.text
-        }),
-        insertAtStartOfNoteText: create.reducer((state, action: PayloadAction<{ noteId: string; text: string }>) => {
-            const note = state.notesById[action.payload.noteId]
-            note.text = action.payload.text + note.text
-        }),
-        updateRelationshipType: create.reducer(
-            (
-                state,
-                action: PayloadAction<{ parentNoteId: string; noteId: string; relationshipType: NoteRelationTypeEnum }>
-            ) => {
-                const { parentNoteId, noteId, relationshipType } = action.payload
-                const existingRelationship = state.noteRelationsById[`${parentNoteId}-${noteId}`]
-                if (relationshipType === existingRelationship.relationshipType) {
-                    return
+        ),
+        moveCursorBack: create.asyncThunk<void, void>(async () => {}, {
+            pending: (state) => {
+                state.status = 'loading'
+            },
+            fulfilled: (state) => {
+                state.status = 'idle'
+                if (state.cursorPosition !== null) {
+                    let newCursorPosition = state.cursorPosition - 1
+                    if (newCursorPosition < 0) {
+                        newCursorPosition = 0
+                    }
+                    setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
                 }
-                existingRelationship.relationshipType = relationshipType
-                delete state.noteRelationsById[`${parentNoteId}-${noteId}`]
-                const allRelationships = Object.values(state.noteRelationsById)
-                allRelationships.push(existingRelationship)
-                //update the state with the new relationships
-                const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                    allRelationships,
-                    state.currentNoteTopic
-                )
-                state.noteRelationsById = noteRelationsById
-                state.noteChildrenByParentId = noteChildrenByParentId
+            },
+            rejected: (state) => {
+                state.status = 'failed'
+            },
+        }),
+        moveCursorForward: create.asyncThunk<void, void>(async () => {}, {
+            pending: (state) => {
+                state.status = 'loading'
+            },
+            fulfilled: (state) => {
+                state.status = 'idle'
+                if (state.cursorPosition !== null) {
+                    let newCursorPosition = state.cursorPosition + 1
+                    if (state.renderOrder.indexToId.length <= newCursorPosition) {
+                        newCursorPosition = state.renderOrder.indexToId.length - 1
+                    }
+                    setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
+                }
+            },
+            rejected: (state) => {
+                state.status = 'failed'
+            },
+        }),
+        moveDown: create.asyncThunk<void, void>(async () => {}, {
+            pending: (state) => {
+                state.status = 'loading'
+            },
+            fulfilled: (state) => {
+                state.status = 'idle'
+                if (state.cursorPosition !== null) {
+                    let newCursorPosition = state.cursorPosition + 2
+                    if (state.renderOrder.indexToId.length <= newCursorPosition) {
+                        newCursorPosition = state.renderOrder.indexToId.length - 1
+                    }
+                    setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
+                }
+            },
+            rejected: (state) => {
+                state.status = 'failed'
+            },
+        }),
+        moveUp: create.asyncThunk<void, void>(async () => {}, {
+            pending: (state) => {
+                state.status = 'loading'
+            },
+            fulfilled: (state) => {
+                state.status = 'idle'
+                if (state.cursorPosition !== null) {
+                    let newCursorPosition: number
+                    //if it's two then it's the first child input - only move back on
+                    if (state.cursorPosition <= 2) {
+                        newCursorPosition = state.cursorPosition - 1
+                    } else {
+                        newCursorPosition = state.cursorPosition - 2
+                    }
+                    if (newCursorPosition < 0) {
+                        newCursorPosition = 0
+                    }
+                    setCursorPositionAndUpdateTopicIfNeeded(state, newCursorPosition)
+                }
+            },
+            rejected: (state) => {
+                state.status = 'failed'
+            },
+        }),
+        reduceNoteNesting: create.asyncThunk<
+            { oldParentId: string; targetNoteId: string },
+            { oldParentId: string; targetNoteId: string }
+        >(
+            async (payload) => {
+                return payload
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<{ oldParentId: string; targetNoteId: string }>) => {
+                    state.status = 'idle'
+                    const { oldParentId, targetNoteId } = action.payload
+                    const newParentId = findParentOfParentInRenderOrder(state, oldParentId, targetNoteId)
+                    if (!newParentId) {
+                        return
+                    }
+                    const existingRelationship = state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
+                    //get the type of the existing relationship
+                    const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
+                    delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
+                    let allRelationships = Object.values(state.noteRelationsById)
+                    let { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        allRelationships,
+                        state.currentNoteTopic
+                    )
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+                    const parentPositionInOrder = state.noteChildrenByParentId[newParentId].find(
+                        (child) => child.childId === oldParentId
+                    )?.order
+                    const newPositionInOrder = parentPositionInOrder !== undefined ? parentPositionInOrder + 1 : 0
+
+                    const newRelationship = initNewRelationship(newParentId, targetNoteId, newPositionInOrder)
+                    newRelationship.relationshipType = relationshipType
+                    const reorderedChildren = reorderChildren(
+                        state.noteChildrenByParentId[newParentId],
+                        newRelationship
+                    )
+                    state.noteChildrenByParentId[newParentId] = reorderedChildren
+                    allRelationships = Object.values(state.noteChildrenByParentId).reduce(
+                        (memo, val) => memo.concat(val),
+                        []
+                    )
+                    //update the state with the new relationships
+                    ;({ noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        allRelationships,
+                        state.currentNoteTopic
+                    ))
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+
+                    //re-calculate the render order in the current topic
+                    if (state.currentNoteTopic) {
+                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                    }
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        nestNote: create.asyncThunk<
+            { oldParentId: string; newParentId: string; targetNoteId: string },
+            { oldParentId: string; newParentId: string; targetNoteId: string }
+        >(
+            async (payload) => {
+                return payload
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (
+                    state,
+                    action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>
+                ) => {
+                    state.status = 'idle'
+                    const { oldParentId, newParentId, targetNoteId } = action.payload
+                    const existingRelationship = state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
+                    //get the type of the existing relationship
+                    const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
+                    delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
+                    //get a list of all relationships regardless of parent or child
+                    const allRelationships = Object.values(state.noteRelationsById)
+                    allRelationships.push({
+                        id: `${newParentId}-${targetNoteId}`,
+                        parentId: newParentId,
+                        childId: targetNoteId,
+                        relationshipType,
+                        order: 0,
+                    })
+                    //update the state with the new relationships
+                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        allRelationships,
+                        state.currentNoteTopic
+                    )
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+                    //The cursor should not move but we should recalculate the order any way so position ids stay in sync.
+                    if (state.currentNoteTopic) {
+                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                    }
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        deleteNote: create.asyncThunk<string, string>(
+            async (noteToDeleteId) => {
+                return noteToDeleteId
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<string>) => {
+                    state.status = 'idle'
+                    const noteToDeleteId = action.payload
+                    delete state.noteChildrenByParentId[noteToDeleteId]
+                    //TODO - Do we need a parent by child map? Should we just use rxdb directly?
+                    const allRelationships = Object.keys(state.noteRelationsById).reduce(
+                        (memo: NoteRelationDocType[], key: string): NoteRelationDocType[] => {
+                            if (!key.includes(noteToDeleteId)) {
+                                const relationshipToKeep = state.noteRelationsById[key]
+                                memo.push(relationshipToKeep)
+                            }
+                            return memo
+                        },
+                        []
+                    )
+                    //update the state with the new relationships
+                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        allRelationships,
+                        state.currentNoteTopic
+                    )
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+
+                    //TODO - delete from note topics if topic and set currentNoteTopic to null if it's the current one
+                    if (state.notesById[noteToDeleteId].topic) {
+                        state.noteTopics = state.noteTopics.filter((topic) => topic.id !== noteToDeleteId)
+                    }
+                    //if it's the current topic then set current topic to null
+                    if (state.currentNoteTopic === noteToDeleteId) {
+                        state.currentNoteTopic = null
+                    }
+                    delete state.notesById[noteToDeleteId]
+                    //re-calculate the render order in the current topic
+                    if (state.currentNoteTopic) {
+                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                    }
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        addAndSwitchToTopicNote: create.asyncThunk<string, string>(
+            async (topic) => {
+                return topic
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<string>) => {
+                    state.status = 'idle'
+                    const newTopic = initTopic(action.payload)
+                    state.notesById[newTopic.id] = newTopic
+                    //TODO - add created and updated at and sort by that. Later other things
+                    state.noteTopics.unshift(newTopic)
+                    state.currentNoteTopic = newTopic.id
+                    state.renderOrder = buildNoteOrderForTopic(state, newTopic)
+
+                    state.noteChildrenByParentId[newTopic.id] = []
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        addEmptyNote: create.asyncThunk<string, string>(
+            async (parentId) => {
+                return parentId
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<string>) => {
+                    state.status = 'idle'
+                    const parentId = action.payload
+
+                    const newPositionInOrder = calculatePositionInOrder(state, parentId)
+                    const currentNoteAtPosition = state.noteChildrenByParentId[parentId].find(
+                        (child) => child.order === newPositionInOrder
+                    )
+                    const childAtPositionEmpty = currentNoteAtPosition
+                        ? state.notesById[currentNoteAtPosition?.childId]?.text === ''
+                        : false
+                    if (childAtPositionEmpty) {
+                        return
+                    }
+
+                    const emptyNote = initEmptyNote()
+                    state.notesById[emptyNote.id] = emptyNote
+                    const newRelationship = initNewRelationship(parentId, emptyNote.id, newPositionInOrder)
+                    const reorderedChildren = reorderChildren(state.noteChildrenByParentId[parentId], newRelationship)
+                    state.noteChildrenByParentId[parentId] = reorderedChildren
+                    const allRelationships = Object.values(state.noteChildrenByParentId).reduce(
+                        (memo, val) => memo.concat(val),
+                        []
+                    )
+                    //update the state with the new relationships
+                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        allRelationships,
+                        state.currentNoteTopic
+                    )
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+
+                    //re-calculate the render order in the current topic
+                    if (state.currentNoteTopic) {
+                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                    }
+                    //TODO - refactor to store relationships separate to notes so they can be edited in once place (not by searching notes and doing the edit in two places)?
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        updateNoteText: create.asyncThunk<{ noteId: string; text: string }, { noteId: string; text: string }>(
+            async (payload) => {
+                return payload
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<{ noteId: string; text: string }>) => {
+                    state.status = 'idle'
+                    const note = state.notesById[action.payload.noteId]
+                    note.text = action.payload.text
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        insertAtStartOfNoteText: create.asyncThunk<{ noteId: string; text: string }, { noteId: string; text: string }>(
+            async (payload) => {
+                return payload
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (state, action: PayloadAction<{ noteId: string; text: string }>) => {
+                    state.status = 'idle'
+                    const note = state.notesById[action.payload.noteId]
+                    note.text = action.payload.text + note.text
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
+            }
+        ),
+        updateRelationshipType: create.asyncThunk<
+            { parentNoteId: string; noteId: string; relationshipType: NoteRelationTypeEnum },
+            { parentNoteId: string; noteId: string; relationshipType: NoteRelationTypeEnum }
+        >(
+            async (payload) => {
+                return payload
+            },
+            {
+                pending: (state) => {
+                    state.status = 'loading'
+                },
+                fulfilled: (
+                    state,
+                    action: PayloadAction<{
+                        parentNoteId: string
+                        noteId: string
+                        relationshipType: NoteRelationTypeEnum
+                    }>
+                ) => {
+                    state.status = 'idle'
+                    const { parentNoteId, noteId, relationshipType } = action.payload
+                    const existingRelationship = state.noteRelationsById[`${parentNoteId}-${noteId}`]
+                    if (relationshipType === existingRelationship.relationshipType) {
+                        return
+                    }
+                    existingRelationship.relationshipType = relationshipType
+                    delete state.noteRelationsById[`${parentNoteId}-${noteId}`]
+                    const allRelationships = Object.values(state.noteRelationsById)
+                    allRelationships.push(existingRelationship)
+                    //update the state with the new relationships
+                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
+                        allRelationships,
+                        state.currentNoteTopic
+                    )
+                    state.noteRelationsById = noteRelationsById
+                    state.noteChildrenByParentId = noteChildrenByParentId
+                },
+                rejected: (state) => {
+                    state.status = 'failed'
+                },
             }
         ),
         initFromRxDB: create.asyncThunk<DeepReadonlyObject<AppInitData>>(

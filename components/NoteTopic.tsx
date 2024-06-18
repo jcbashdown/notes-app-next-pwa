@@ -1,5 +1,4 @@
 // NoteTopic.tsx
-//
 import { useAppSelector, useAppDispatch } from '@/lib/redux/hooks'
 import { noteSlice, selectNote, updateNoteText, selectCurrentNoteTopic } from '@/lib/redux/features/noteSlice'
 import { useCursorFocus } from '@/lib/hooks/useCursorFocus'
@@ -8,6 +7,7 @@ import { adjustWhitespace } from '@/lib/helpers/textHelpers'
 import { calculateActionFromTopicInput, inputTypes } from '@/lib/redux/utils/calculateActionFromInput'
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
 import NotesList from '@/components/NotesList'
+import useOrderedDispatch from '@/lib/hooks/useOrderedDispatch'
 
 interface NoteTopicProps {
     noteTopic: NoteDocType
@@ -20,8 +20,8 @@ export default function NoteTopic({ noteTopic }: NoteTopicProps) {
     const inputIdentifier = `${note.id}_topic`
 
     const dispatch = useAppDispatch()
-    //TODO - understand why I don't need to specify the type of state even in
-    //strict mode
+    const orderedDispatch = useOrderedDispatch(dispatch)
+
     const handleKeyDown = (e: React.KeyboardEvent) => {
         //DRY up with Note
         const target = e.target as HTMLInputElement
@@ -41,18 +41,14 @@ export default function NoteTopic({ noteTopic }: NoteTopicProps) {
             noteSlice
         )
         for (const fnMap of actionFunctions) {
-            if (fnMap.args.length) {
-                dispatch(fnMap.fn(...fnMap.args))
-            } else {
-                dispatch(fnMap.fn())
-            }
+            orderedDispatch(fnMap.fn, fnMap.args)
         }
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = adjustWhitespace(e.target.value)
         if (value !== note.text) {
-            dispatch(updateNoteText({ noteId: note.id, text: value }))
+            orderedDispatch(updateNoteText, [{ noteId: note.id, text: value }])
         }
     }
 

@@ -26,7 +26,7 @@ async function loopUntilChangedOrTimeout(currentFocus: any = null): Promise<bool
 
         if (newInputDataId !== currentInputDataId) {
             currentInputDataId = newInputDataId
-            console.log('selection changed')
+            console.log('selection changed to', currentInputDataId)
             return true
         }
 
@@ -47,23 +47,20 @@ export default async function runNoteInput(noteInput: string, page: Page) {
     const keyPresses = keyPressesFromNoteGenerator.getKeyPresses()
     for (const keyPress of keyPresses) {
         if (SINGLE_KEYPRESSES.includes(keyPress)) {
-            focusInput.press(keyPress)
+            await focusInput.press(keyPress)
             console.log('pressed', keyPress)
             //chrome seems to miss keypresses sometimes if you have loads of ArrowRight (or ArrowLeft?) in a row.
-            await page.waitForTimeout(10)
         } else if (keyPress !== 'FOCUS') {
             if ((await getInputId(focusInput)).match(/topic/i)) {
-                focusInput.fill(keyPress)
+                await focusInput.fill(keyPress)
                 console.log('filled topic', keyPress)
-                await page.waitForTimeout(200)
             } else {
-                focusInput.pressSequentially(keyPress[0])
+                await focusInput.press(keyPress[0])
                 console.log('filled', keyPress[0])
                 //The first character may change the focus
                 await loopUntilChangedOrTimeout(focusInput)
-                focusInput.pressSequentially(keyPress.slice(1))
+                await focusInput.pressSequentially(keyPress.slice(1))
                 console.log('filled', keyPress.slice(1))
-                await page.waitForTimeout(200)
             }
         } else {
             await loopUntilChangedOrTimeout(focusInput)
