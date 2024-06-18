@@ -266,7 +266,7 @@ export const noteSlice = createAppSlice({
                     state.status = 'failed'
                 },
             }
-        ),
+        ), //TODO - no need for this to be async. Also review others after rxdb integration
         setCursorSelection: create.asyncThunk<cursorSelectionType | null, cursorSelectionType | null>(
             async (cursorSelection) => {
                 return cursorSelection
@@ -283,7 +283,7 @@ export const noteSlice = createAppSlice({
                     state.status = 'failed'
                 },
             }
-        ),
+        ), //TODO - no need for this to be async. Also review others after rxdb integration
         setNoteTopic: create.asyncThunk<string, string>(
             async (topicId) => {
                 return topicId
