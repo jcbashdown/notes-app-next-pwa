@@ -5,64 +5,62 @@ import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
 
 //READ
 //TODO - use a decorator to await?
-const fetchNotes = async (): Promise<NoteDocument[]> => {
+const rxdbFetchNotes = async (): Promise<NoteDocument[]> => {
     const dbInstance = await initializeDB()
     return await dbInstance.notes.find().exec()
 }
-const fetchNoteTopics = async (): Promise<NoteDocument[]> => {
+const rxdbFetchNoteTopics = async (): Promise<NoteDocument[]> => {
     const dbInstance = await initializeDB()
     return await dbInstance.notes.find().where('topic').eq(true).exec()
 }
 
-const fetchNote = async (id: string): Promise<NoteDocument | null> => {
+const rxdbFetchNote = async (id: string): Promise<NoteDocument | null> => {
     const dbInstance = await initializeDB()
     return await dbInstance.notes.findOne().where('id').eq(id).exec()
 }
 
-const fetchNotesAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
-    const fetchNotesQueryResult = await fetchNotes()
+const rxdbFetchNotesAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
+    const fetchNotesQueryResult = await rxdbFetchNotes()
     return fetchNotesQueryResult.map((note) => note.toJSON())
 }
 
-const fetchNoteTopicsAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
-    const fetchNoteTopicsQueryResult = await fetchNoteTopics()
+const rxdbFetchNoteTopicsAsJson = async (): Promise<DeepReadonlyObject<NoteDocType[]>> => {
+    const fetchNoteTopicsQueryResult = await rxdbFetchNoteTopics()
     return fetchNoteTopicsQueryResult.map((note) => note.toJSON())
 }
 
-const fetchNoteAsJson = async (id: string): Promise<DeepReadonlyObject<NoteDocType> | null> => {
-    const note = await fetchNote(id)
+const rxdbFetchNoteAsJson = async (id: string): Promise<DeepReadonlyObject<NoteDocType> | null> => {
+    const note = await rxdbFetchNote(id)
     return note?.toJSON() || null
 }
 
-const noteById = async (id: string): Promise<NoteDocType | null> => {
-    return await fetchNoteAsJson(id)
+const rxdbNoteById = async (id: string): Promise<NoteDocType | null> => {
+    return await rxdbFetchNoteAsJson(id)
 }
 
 //CREATE
-const addNote = async (doc: NoteDocType): Promise<NoteDocType> => {
+const rxdbAddNote = async (doc: NoteDocType): Promise<NoteDocType> => {
     const dbInstance = await initializeDB()
     await dbInstance.notes.insert(doc)
     return doc
 }
 
-const bulkInsertNotes = async (notes: NoteDocType[]): Promise<void> => {
+const rxdbBulkInsertNotes = async (notes: NoteDocType[]): Promise<void> => {
     const dbInstance = await initializeDB()
     await dbInstance.notes.bulkInsert(notes)
 }
 
 //UPDATE
-const updateNote = async (docId: string, changes: Partial<NoteDocType>): Promise<void> => {
+const rxdbUpdateNote = async (docId: string, changes: Partial<NoteDocType>): Promise<void> => {
     const dbInstance = await initializeDB()
-    const doc = await dbInstance.notes.findOne().where('id').eq(docId).exec()
+    const doc = await dbInstance.notes.findOne(docId).exec()
     if (doc) {
-        await doc.update({
-            $set: changes,
-        })
+        await doc.patch(changes)
     }
 }
 
 //DESTROY
-const deleteNote = async (docId: string): Promise<void> => {
+const rxdbDeleteNote = async (docId: string): Promise<void> => {
     const dbInstance = await initializeDB()
     const doc = await dbInstance.notes.findOne().where('id').eq(docId).exec()
     if (doc) {
@@ -71,16 +69,16 @@ const deleteNote = async (docId: string): Promise<void> => {
 }
 
 const noteService = {
-    fetchNote,
-    fetchNoteAsJson,
-    fetchNotes,
-    fetchNotesAsJson,
-    fetchNoteTopics,
-    fetchNoteTopicsAsJson,
-    noteById,
-    addNote,
-    updateNote,
-    deleteNote,
-    bulkInsertNotes,
+    rxdbFetchNote,
+    rxdbFetchNoteAsJson,
+    rxdbFetchNotes,
+    rxdbFetchNotesAsJson,
+    rxdbFetchNoteTopics,
+    rxdbFetchNoteTopicsAsJson,
+    rxdbNoteById,
+    rxdbAddNote,
+    rxdbUpdateNote,
+    rxdbDeleteNote,
+    rxdbBulkInsertNotes,
 }
 export default noteService

@@ -3069,6 +3069,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lodash@npm:^4":
+  version: 4.17.5
+  resolution: "@types/lodash@npm:4.17.5"
+  checksum: 10c0/55924803ed853e72261512bd3eaf2c5b16558c3817feb0a3125ef757afe46e54b86f33d1960e40b7606c0ddab91a96f47966bf5e6006b7abfd8994c13b04b19b
+  languageName: node
+  linkType: hard
+
 "@types/lokijs@npm:1.5.10":
   version: 1.5.10
   resolution: "@types/lokijs@npm:1.5.10"
@@ -7634,7 +7641,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.15, lodash@npm:^4.17.20":
+"lodash@npm:^4.17.15, lodash@npm:^4.17.20, lodash@npm:^4.17.21":
   version: 4.17.21
   resolution: "lodash@npm:4.17.21"
   checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
@@ -9337,6 +9344,7 @@ __metadata:
     "@testing-library/jest-dom": "npm:^5.16.5"
     "@testing-library/react": "npm:^14.0.0"
     "@types/jest": "npm:^29.5.1"
+    "@types/lodash": "npm:^4"
     "@types/node": "npm:20.12.6"
     "@types/react": "npm:18.2.75"
     "@types/react-dom": "npm:^18.2.4"
@@ -9345,6 +9353,7 @@ __metadata:
     eslint-config-next: "npm:14.2.3"
     jest: "npm:^29.7.0"
     jest-environment-jsdom: "npm:^29.7.0"
+    lodash: "npm:^4.17.21"
     next: "npm:latest"
     next-pwa: "npm:^5.6.0"
     postcss: "npm:^8.4.38"
