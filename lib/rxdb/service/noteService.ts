@@ -58,6 +58,10 @@ const rxdbUpdateNote = async (docId: string, changes: Partial<NoteDocType>): Pro
         await doc.patch(changes)
     }
 }
+const rxdbInsertOrUpdateNote = async (note: Partial<NoteDocType>): Promise<void> => {
+    const dbInstance = await initializeDB()
+    await dbInstance.notes.upsert(note)
+}
 
 //DESTROY
 const rxdbDeleteNote = async (docId: string): Promise<void> => {
@@ -78,6 +82,7 @@ const noteService = {
     rxdbNoteById,
     rxdbAddNote,
     rxdbUpdateNote,
+    rxdbInsertOrUpdateNote,
     rxdbDeleteNote,
     rxdbBulkInsertNotes,
 }

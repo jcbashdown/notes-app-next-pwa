@@ -24,6 +24,7 @@ const {
     rxdbNoteById,
     rxdbAddNote,
     rxdbUpdateNote,
+    rxdbInsertOrUpdateNote,
     rxdbDeleteNote,
 } = noteService
 const {
@@ -754,7 +755,8 @@ export const noteSlice = createAppSlice({
         ),
         updateNoteText: create.asyncThunk<{ noteId: string; text: string }, { noteId: string; text: string }>(
             async (payload) => {
-                await rxdbUpdateNote(payload.noteId, { text: payload.text })
+                //TODO - consider debouncing, tracking note text in component with usestate and debouncing there then making this synchronous again etc.
+                rxdbInsertOrUpdateNote({ id: payload.noteId, text: payload.text })
                 return payload
             },
             {

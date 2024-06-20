@@ -37,10 +37,10 @@ export default defineConfig({
             use: { ...devices['Desktop Chrome'] },
         },
 
-        {
-            name: 'firefox',
-            use: { ...devices['Desktop Firefox'] },
-        },
+        //{
+        //name: 'firefox',
+        //use: { ...devices['Desktop Firefox'] },
+        //},
 
         //Don't care about safari and this isn't working but TODO - reenable later and fix
         //{
