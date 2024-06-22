@@ -1,5 +1,6 @@
 import { DeepReadonlyObject } from 'event-reduce-js/dist/lib/types'
 import initializeDB, { NoteRelationDocument } from '@/lib/rxdb/database'
+import { IdNoteRelationsMap } from '@/lib/redux/features/noteSlice'
 
 import { NoteRelationDocType } from '@/lib/rxdb/types/noteTypes'
 
@@ -7,12 +8,12 @@ import { NoteRelationDocType } from '@/lib/rxdb/types/noteTypes'
 //TODO - use a decorator to await?
 const rxdbFetchNoteRelations = async (): Promise<NoteRelationDocument[]> => {
     const dbInstance = await initializeDB()
-    return await dbInstance.note_relations.find().exec()
+    return await dbInstance.note_relations.find().where('_deleted').eq(false).exec()
 }
 
 const rxdbFetchNoteRelation = async (id: string): Promise<NoteRelationDocument | null> => {
     const dbInstance = await initializeDB()
-    return await dbInstance.note_relations.findOne().where('id').eq(id).exec()
+    return await dbInstance.note_relations.findOne().where('id').eq(id).where('_deleted').eq(false).exec()
 }
 
 const rxdbFetchNoteRelationsAsJson = async (): Promise<DeepReadonlyObject<NoteRelationDocType[]>> => {
@@ -51,6 +52,26 @@ const rxdbNoteRelationByParentAndChildId = async (
             await dbInstance.note_relations.findOne().where('parentId').eq(parentId).where('childId').eq(childId).exec()
         )?.toJSON() || null
     )
+}
+
+const rxdbAllNoteChildrenByParentId = async (): Promise<IdNoteRelationsMap> => {
+    const noteRelations = ((await rxdbFetchNoteRelationsAsJson()) as NoteRelationDocType[]).sort(
+        (a: NoteRelationDocType, b: NoteRelationDocType) => a.order - b.order
+    )
+    let result: IdNoteRelationsMap = {}
+
+    result = noteRelations.reduce((acc: IdNoteRelationsMap, noteRelation: NoteRelationDocType) => {
+        const parentId = noteRelation.parentId
+        acc[parentId] = acc[parentId] || []
+        acc[parentId].push(noteRelation)
+        return acc
+    }, result)
+    return result
+    //shouldn't be necessary if the whole thing is sorted
+    //return Object.keys(result).reduce((memo: IdNoteRelationsMap, parentId: string) => {
+    //memo[parentId] = result[parentId].sort((a: NoteRelationDocType, b: NoteRelationDocType) => a.order - b.order)
+    //return memo
+    //}, {})
 }
 
 //CREATE
@@ -136,6 +157,7 @@ const noteRelationService = {
     rxdbFetchNoteRelations,
     rxdbFetchNoteRelationsAsJson,
     rxdbChildrenByParentId,
+    rxdbAllNoteChildrenByParentId,
     rxdbNoteRelationByParentAndChildId,
     rxdbAddNoteRelation,
     rxdbUpdateNoteRelation,

@@ -5,6 +5,7 @@ import { useAppSelector } from '@/lib/redux/hooks'
 import { selectNotesById, selectNoteChildrenByParentId } from '@/lib/redux/features/noteSlice'
 import NewTopic from '@/components/NewTopic'
 import generateNotesJSONFromStoreState from '@/lib/redux/utils/generateNotesJSONFromStoreState'
+import generateNotesJSONFromDBState from '@/lib/redux/utils/generateNotesJSONFromDBState'
 import { IdNoteRelationsMap } from '@/lib/redux/features/noteSlice'
 import { NoteDocType } from '@/lib/rxdb/types/noteTypes'
 export default function Menu() {
@@ -32,7 +33,6 @@ export default function Menu() {
         }
     }
     const handleClick = () => {
-        console.log('downloading')
         downloadJSON(notes, noteChildrenByParentId)
     }
     const downloadJSON = (
@@ -40,8 +40,8 @@ export default function Menu() {
         noteChildrenByParentId: IdNoteRelationsMap,
         filename = 'notes.json'
     ) => {
-        console.log('downloading')
         const json = generateNotesJSONFromStoreState(notes, noteChildrenByParentId)
+        //const json = await generateNotesJSONFromDBState()
         const blob = new Blob([json], { type: 'application/json' })
         const href = URL.createObjectURL(blob)
         const link = document.createElement('a')

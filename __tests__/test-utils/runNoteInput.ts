@@ -50,7 +50,7 @@ export default async function runNoteInput(noteInput: string, page: Page) {
             await focusInput.press(keyPress)
             console.log('pressed', keyPress)
             //TODO - make this unnecessary
-            await page.waitForTimeout(20)
+            await page.waitForTimeout(30)
             console.log('waited', keyPress)
         } else if (keyPress !== 'FOCUS') {
             if ((await getInputId(focusInput)).match(/topic/i)) {
