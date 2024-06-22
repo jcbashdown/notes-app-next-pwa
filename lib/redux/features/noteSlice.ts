@@ -433,7 +433,6 @@ export const noteSlice = createAppSlice({
             {
                 newNoteChildrenByParentId: IdNoteRelationsMap | null
                 newNoteRelationsById: IdNoteRelationMap | null
-                newParentId: string | null
             },
             { oldParentId: string; targetNoteId: string }
         >(
@@ -443,7 +442,6 @@ export const noteSlice = createAppSlice({
             ): Promise<{
                 newNoteChildrenByParentId: IdNoteRelationsMap | null
                 newNoteRelationsById: IdNoteRelationMap | null
-                newParentId: string | null
             }> => {
                 const { oldParentId, targetNoteId } = payload
 
@@ -493,7 +491,7 @@ export const noteSlice = createAppSlice({
                 }
 
                 console.log(newNoteChildrenByParentId, newNoteRelationsById, newParentId)
-                return { newNoteChildrenByParentId, newNoteRelationsById, newParentId }
+                return { newNoteChildrenByParentId, newNoteRelationsById }
             },
             {
                 pending: (state) => {
@@ -504,13 +502,12 @@ export const noteSlice = createAppSlice({
                     action: PayloadAction<{
                         newNoteChildrenByParentId: IdNoteRelationsMap | null
                         newNoteRelationsById: IdNoteRelationMap | null
-                        newParentId: string | null
                     }>
                 ) => {
                     console.log('Reducer: reduceNoteNesting')
                     state.status = 'idle'
-                    const { newNoteChildrenByParentId, newNoteRelationsById, newParentId } = action.payload
-                    if (!newParentId || !newNoteChildrenByParentId || !newNoteRelationsById) {
+                    const { newNoteChildrenByParentId, newNoteRelationsById } = action.payload
+                    if (!newNoteChildrenByParentId || !newNoteRelationsById) {
                         return
                     }
                     state.noteRelationsById = newNoteRelationsById
@@ -527,7 +524,10 @@ export const noteSlice = createAppSlice({
             }
         ),
         nestNote: create.asyncThunk<
-            { oldParentId: string; newParentId: string; targetNoteId: string },
+            {
+                newNoteChildrenByParentId: IdNoteRelationsMap
+                newNoteRelationsById: IdNoteRelationMap
+            },
             { oldParentId: string; newParentId: string; targetNoteId: string }
         >(
             async (payload) => {
@@ -554,7 +554,17 @@ export const noteSlice = createAppSlice({
                     order: 0,
                 })
 
-                return payload
+                const newNoteChildrenByParentId = await rxdbAllNoteChildrenByParentId()
+                const newNoteRelationsById = (await rxdbFetchNoteRelationsAsJson()).reduce(
+                    (memo: IdNoteRelationMap, noteRelation: NoteRelationDocType) => {
+                        memo[noteRelation.id] = noteRelation
+                        return memo
+                    },
+                    {} as IdNoteRelationMap
+                )
+
+                console.log(newNoteChildrenByParentId, newNoteRelationsById, newParentId)
+                return { newNoteChildrenByParentId, newNoteRelationsById }
             },
             {
                 pending: (state) => {
@@ -562,31 +572,18 @@ export const noteSlice = createAppSlice({
                 },
                 fulfilled: (
                     state,
-                    action: PayloadAction<{ oldParentId: string; newParentId: string; targetNoteId: string }>
+                    action: PayloadAction<{
+                        newNoteChildrenByParentId: IdNoteRelationsMap
+                        newNoteRelationsById: IdNoteRelationMap
+                    }>
                 ) => {
                     console.log('Reducer: nestNote')
                     state.status = 'idle'
-                    const { oldParentId, newParentId, targetNoteId } = action.payload
-                    const existingRelationship = state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
-                    //get the type of the existing relationship
-                    const relationshipType = existingRelationship?.relationshipType || NoteRelationTypeEnum.RELATED
-                    delete state.noteRelationsById[`${oldParentId}-${targetNoteId}`]
-                    //get a list of all relationships regardless of parent or child
-                    const allRelationships = Object.values(state.noteRelationsById)
-                    allRelationships.push({
-                        id: `${newParentId}-${targetNoteId}`,
-                        parentId: newParentId,
-                        childId: targetNoteId,
-                        relationshipType,
-                        order: 0,
-                    })
-                    //update the state with the new relationships
-                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                        allRelationships,
-                        state.currentNoteTopic
-                    )
-                    state.noteRelationsById = noteRelationsById
-                    state.noteChildrenByParentId = noteChildrenByParentId
+                    const { newNoteChildrenByParentId, newNoteRelationsById } = action.payload
+                    state.noteRelationsById = newNoteRelationsById
+                    state.noteChildrenByParentId = newNoteChildrenByParentId
+
+                    //re-calculate the render order in the current topic
                     //The cursor should not move but we should recalculate the order any way so position ids stay in sync.
                     if (state.currentNoteTopic) {
                         state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
