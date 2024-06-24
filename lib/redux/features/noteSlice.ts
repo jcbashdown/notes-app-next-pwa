@@ -563,7 +563,6 @@ export const noteSlice = createAppSlice({
                     {} as IdNoteRelationMap
                 )
 
-                console.log(newNoteChildrenByParentId, newNoteRelationsById, newParentId)
                 return { newNoteChildrenByParentId, newNoteRelationsById }
             },
             {
@@ -594,49 +593,72 @@ export const noteSlice = createAppSlice({
                 },
             }
         ),
-        deleteNote: create.asyncThunk<string, string>(
+        deleteNote: create.asyncThunk<
+            {
+                newNoteChildrenByParentId: IdNoteRelationsMap
+                newNoteRelationsById: IdNoteRelationMap
+                newNotesById: IdNoteMap
+                newNoteTopics: NoteDocType[]
+                noteToDeleteId: string
+            },
+            string
+        >(
             async (noteToDeleteId) => {
                 await rxdbDeleteNote(noteToDeleteId)
                 await rxdbDeleteNoteRelationsLinkedToNote(noteToDeleteId)
-                return noteToDeleteId
+                const newNoteChildrenByParentId = await rxdbAllNoteChildrenByParentId()
+                const newNoteRelationsById = (await rxdbFetchNoteRelationsAsJson()).reduce(
+                    (memo: IdNoteRelationMap, noteRelation: NoteRelationDocType) => {
+                        memo[noteRelation.id] = noteRelation
+                        return memo
+                    },
+                    {} as IdNoteRelationMap
+                )
+                const { newNotesById, newNoteTopics } = (await rxdbFetchNotesAsJson()).reduce(
+                    (memo: { newNotesById: IdNoteMap; newNoteTopics: NoteDocType[] }, note: NoteDocType) => {
+                        memo.newNotesById[note.id] = note
+                        if (note.topic) {
+                            memo.newNoteTopics.push(note)
+                        }
+                        return memo
+                    },
+                    { newNotesById: {}, newNoteTopics: [] } as { newNotesById: IdNoteMap; newNoteTopics: NoteDocType[] }
+                )
+
+                return { newNoteChildrenByParentId, newNoteRelationsById, newNotesById, newNoteTopics, noteToDeleteId }
             },
             {
                 pending: (state) => {
                     state.status = 'loading'
                 },
-                fulfilled: (state, action: PayloadAction<string>) => {
+                fulfilled: (
+                    state,
+                    action: PayloadAction<{
+                        newNoteChildrenByParentId: IdNoteRelationsMap
+                        newNoteRelationsById: IdNoteRelationMap
+                        newNotesById: IdNoteMap
+                        newNoteTopics: NoteDocType[]
+                        noteToDeleteId: string
+                    }>
+                ) => {
                     console.log('Reducer: deleteNote')
                     state.status = 'idle'
-                    const noteToDeleteId = action.payload
-                    delete state.noteChildrenByParentId[noteToDeleteId]
-                    //TODO - Do we need a parent by child map? Should we just use rxdb directly?
-                    const allRelationships = Object.keys(state.noteRelationsById).reduce(
-                        (memo: NoteRelationDocType[], key: string): NoteRelationDocType[] => {
-                            if (!key.includes(noteToDeleteId)) {
-                                const relationshipToKeep = state.noteRelationsById[key]
-                                memo.push(relationshipToKeep)
-                            }
-                            return memo
-                        },
-                        []
-                    )
-                    //update the state with the new relationships
-                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                        allRelationships,
-                        state.currentNoteTopic
-                    )
-                    state.noteRelationsById = noteRelationsById
-                    state.noteChildrenByParentId = noteChildrenByParentId
+                    const {
+                        newNoteChildrenByParentId,
+                        newNoteRelationsById,
+                        newNotesById,
+                        newNoteTopics,
+                        noteToDeleteId,
+                    } = action.payload
+                    state.noteRelationsById = newNoteRelationsById
+                    state.noteChildrenByParentId = newNoteChildrenByParentId
 
-                    //TODO - delete from note topics if topic and set currentNoteTopic to null if it's the current one
-                    if (state.notesById[noteToDeleteId].topic) {
-                        state.noteTopics = state.noteTopics.filter((topic) => topic.id !== noteToDeleteId)
-                    }
                     //if it's the current topic then set current topic to null
                     if (state.currentNoteTopic === noteToDeleteId) {
                         state.currentNoteTopic = null
                     }
-                    delete state.notesById[noteToDeleteId]
+                    state.noteTopics = newNoteTopics
+                    state.notesById = newNotesById
                     //re-calculate the render order in the current topic
                     if (state.currentNoteTopic) {
                         state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
