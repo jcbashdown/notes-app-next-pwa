@@ -697,15 +697,19 @@ export const noteSlice = createAppSlice({
             }
         ),
         addEmptyNote: create.asyncThunk<
-            { parentId: string; reorderedChildren: NoteRelationDocType[]; emptyNote: NoteDocType } | null,
+            {
+                newNoteChildrenByParentId: IdNoteRelationsMap
+                newNoteRelationsById: IdNoteRelationMap
+                emptyNote: NoteDocType
+            } | null,
             string
         >(
             async (
                 parentId,
                 thunkApi
             ): Promise<{
-                parentId: string
-                reorderedChildren: NoteRelationDocType[]
+                newNoteChildrenByParentId: IdNoteRelationsMap
+                newNoteRelationsById: IdNoteRelationMap
                 emptyNote: NoteDocType
             } | null> => {
                 const state = (thunkApi.getState() as RootState).noteSlice as NotesState
@@ -732,9 +736,17 @@ export const noteSlice = createAppSlice({
                 for (const child of reorderedChildren) {
                     await rxdbInsertOrUpdateNoteRelation(child)
                 }
+                const newNoteChildrenByParentId = await rxdbAllNoteChildrenByParentId()
+                const newNoteRelationsById = (await rxdbFetchNoteRelationsAsJson()).reduce(
+                    (memo: IdNoteRelationMap, noteRelation: NoteRelationDocType) => {
+                        memo[noteRelation.id] = noteRelation
+                        return memo
+                    },
+                    {} as IdNoteRelationMap
+                )
                 return {
-                    parentId,
-                    reorderedChildren,
+                    newNoteChildrenByParentId,
+                    newNoteRelationsById,
                     emptyNote,
                 }
             },
@@ -745,28 +757,18 @@ export const noteSlice = createAppSlice({
                 fulfilled: (
                     state,
                     action: PayloadAction<{
-                        parentId: string
-                        reorderedChildren: NoteRelationDocType[]
+                        newNoteChildrenByParentId: IdNoteRelationsMap
+                        newNoteRelationsById: IdNoteRelationMap
                         emptyNote: NoteDocType
                     } | null>
                 ) => {
                     if (!action.payload) return
                     console.log('Reducer: addEmptyNote')
-                    const { parentId, reorderedChildren, emptyNote } = action.payload
+                    const { newNoteRelationsById, newNoteChildrenByParentId, emptyNote } = action.payload
 
                     state.notesById[emptyNote.id] = emptyNote
-                    state.noteChildrenByParentId[parentId] = reorderedChildren
-                    const allRelationships = Object.values(state.noteChildrenByParentId).reduce(
-                        (memo, val) => memo.concat(val),
-                        []
-                    )
-                    //update the state with the new relationships
-                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                        allRelationships,
-                        state.currentNoteTopic
-                    )
-                    state.noteRelationsById = noteRelationsById
-                    state.noteChildrenByParentId = noteChildrenByParentId
+                    state.noteRelationsById = newNoteRelationsById
+                    state.noteChildrenByParentId = newNoteChildrenByParentId
 
                     //re-calculate the render order in the current topic
                     if (state.currentNoteTopic) {
