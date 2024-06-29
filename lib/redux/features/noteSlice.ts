@@ -826,7 +826,10 @@ export const noteSlice = createAppSlice({
             }
         ),
         updateRelationshipType: create.asyncThunk<
-            { parentNoteId: string; noteId: string; relationshipType: NoteRelationTypeEnum },
+            {
+                newNoteChildrenByParentId: IdNoteRelationsMap
+                newNoteRelationsById: IdNoteRelationMap
+            },
             { parentNoteId: string; noteId: string; relationshipType: NoteRelationTypeEnum }
         >(
             async (payload) => {
@@ -840,7 +843,18 @@ export const noteSlice = createAppSlice({
                     })
                 }
 
-                return payload
+                const newNoteChildrenByParentId = await rxdbAllNoteChildrenByParentId()
+                const newNoteRelationsById = (await rxdbFetchNoteRelationsAsJson()).reduce(
+                    (memo: IdNoteRelationMap, noteRelation: NoteRelationDocType) => {
+                        memo[noteRelation.id] = noteRelation
+                        return memo
+                    },
+                    {} as IdNoteRelationMap
+                )
+                return {
+                    newNoteChildrenByParentId,
+                    newNoteRelationsById,
+                }
             },
             {
                 pending: (state) => {
@@ -849,29 +863,15 @@ export const noteSlice = createAppSlice({
                 fulfilled: (
                     state,
                     action: PayloadAction<{
-                        parentNoteId: string
-                        noteId: string
-                        relationshipType: NoteRelationTypeEnum
+                        newNoteChildrenByParentId: IdNoteRelationsMap
+                        newNoteRelationsById: IdNoteRelationMap
                     }>
                 ) => {
                     console.log('Reducer: updateRelationshipType')
                     state.status = 'idle'
-                    const { parentNoteId, noteId, relationshipType } = action.payload
-                    const existingRelationship = state.noteRelationsById[`${parentNoteId}-${noteId}`]
-                    if (relationshipType === existingRelationship.relationshipType) {
-                        return
-                    }
-                    existingRelationship.relationshipType = relationshipType
-                    delete state.noteRelationsById[`${parentNoteId}-${noteId}`]
-                    const allRelationships = Object.values(state.noteRelationsById)
-                    allRelationships.push(existingRelationship)
-                    //update the state with the new relationships
-                    const { noteRelationsById, noteChildrenByParentId } = buildNoteRelationMappings(
-                        allRelationships,
-                        state.currentNoteTopic
-                    )
-                    state.noteRelationsById = noteRelationsById
-                    state.noteChildrenByParentId = noteChildrenByParentId
+                    const { newNoteRelationsById, newNoteChildrenByParentId } = action.payload
+                    state.noteRelationsById = newNoteRelationsById
+                    state.noteChildrenByParentId = newNoteChildrenByParentId
                 },
                 rejected: (state) => {
                     state.status = 'failed'
