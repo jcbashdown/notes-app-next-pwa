@@ -21,9 +21,17 @@ function removeIds(json: any): any {
     return json
 }
 
+async function uploadFile(page: any, filePath: string) {
+    await page.locator('#menuButton').click()
+    //await page.getByRole('link', { name: 'Upload notes' }).click()
+    const input = page.locator('input[type=file]')
+    await input.setInputFiles(path.join(__dirname, filePath))
+}
+
 //Interact and then check the generated notes and relationships are what's expected
 test('test some random interactions for regressions', async ({ page }) => {
     await page.goto('http://localhost:3000/')
+    await uploadFile(page, '../../fixtures/notes.json')
     await page.locator('.space-y-4 > .bg-white > input').press('ArrowDown')
     await page.waitForTimeout(100)
 
@@ -79,9 +87,9 @@ test('test some random interactions for regressions', async ({ page }) => {
     await page.waitForTimeout(100)
     await page.locator('li:nth-child(3) > ul > li > .p-1 > input:nth-child(2)').press('ArrowDown')
     await page.waitForTimeout(100)
-    await page.locator('div:nth-child(2) > input').fill('This is the root note')
+    await page.locator('div:nth-child(2) > input[type=text]').fill('This is the root note')
     await page.waitForTimeout(100)
-    await page.locator('div:nth-child(2) > input').press('ArrowDown')
+    await page.locator('div:nth-child(2) > input[type=text]').press('ArrowDown')
     await page.waitForTimeout(100)
     await page.locator('.pl-1').first().press('ArrowDown')
     await page.waitForTimeout(100)
@@ -185,9 +193,9 @@ test('test some random interactions for regressions', async ({ page }) => {
     await page.waitForTimeout(100)
     await page.getByRole('textbox').nth(3).fill('')
     await page.waitForTimeout(100)
-    await page.locator('div:nth-child(2) > input').fill('New note')
+    await page.locator('div:nth-child(2) > input[type=text]').fill('New note')
     await page.waitForTimeout(100)
-    await page.locator('.space-y-4 > div > input').first().click()
+    await page.locator('.space-y-4 > div > input[type=text]').first().click()
     await page.waitForTimeout(100)
     await page.getByRole('textbox').nth(2).click()
     await page.waitForTimeout(100)
@@ -227,9 +235,12 @@ A new Note|Enter|
 test('test with simple note input', async ({ page }) => {
     test.slow()
     await page.goto('http://localhost:3000/')
+    await uploadFile(page, '../../fixtures/notes.json')
+    await page.waitForTimeout(500)
     await runNoteInput(simpleNoteInput, page)
     await page.waitForTimeout(500)
 
+    await page.click('#menuButton')
     await page.click('#menuButton')
     // Set up the download listener
     const [download] = await Promise.all([
@@ -267,9 +278,12 @@ ${aNewNote}|Enter|
 test('test with complex note input', async ({ page }) => {
     test.slow()
     await page.goto('http://localhost:3000/')
+    await uploadFile(page, '../../fixtures/notes.json')
+    await page.waitForTimeout(500)
     await runNoteInput(complexNoteInput, page)
     await page.waitForTimeout(500)
 
+    await page.click('#menuButton')
     await page.click('#menuButton')
     // Set up the download listener
     const [download] = await Promise.all([
@@ -337,9 +351,12 @@ ${aNewNote}|Enter|
 test('test with note input deletions', async ({ page }) => {
     test.slow()
     await page.goto('http://localhost:3000/')
+    await uploadFile(page, '../../fixtures/notes.json')
+    await page.waitForTimeout(500)
     await runNoteInput(noteInputWithDeletions, page)
     await page.waitForTimeout(500)
 
+    await page.click('#menuButton')
     await page.click('#menuButton')
     // Set up the download listener
     const [download] = await Promise.all([
@@ -387,3 +404,7 @@ test('test with note input deletions', async ({ page }) => {
         )
     )
 })
+
+//TODO
+//- later, ensure upload when already notes present works as expected
+//- ensure double upload works as expected

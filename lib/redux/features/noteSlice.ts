@@ -5,6 +5,7 @@
  */
 
 import cloneDeep from 'lodash/cloneDeep'
+import debounce from 'lodash/debounce'
 import { type PayloadAction } from '@reduxjs/toolkit'
 //import { ulid } from '@/lib/helpers/ulid'
 import { ulid } from 'ulid'
@@ -98,8 +99,8 @@ const initialState: NotesState = {
     currentNoteTopic: null,
     status: 'idle',
     renderOrder: {
-        idToIndex: {},
-        indexToId: [],
+        idToIndex: { newTopic: 0 },
+        indexToId: ['newTopic'],
     },
 }
 
@@ -128,7 +129,7 @@ const initNewRelationship = (parentId: string, childId: string, order: number): 
     }
 }
 const returnIdIfTopic = (inputIdentifier: string): string | null => {
-    if (inputIdentifier.includes('_topic')) {
+    if (inputIdentifier?.includes('_topic')) {
         return inputIdentifier.split('_')[0]
     }
     return null
@@ -184,7 +185,7 @@ const traverseChildren = (state: NotesState, note: NoteDocType, renderOrder: Ren
     }, renderOrder)
 }
 
-const buildNoteOrderForTopic = (state: NotesState, activeTopic: NoteDocType): RenderOrderType => {
+const buildNoteOrder = (state: NotesState, activeTopic: NoteDocType | null): RenderOrderType => {
     const initialIdToIndex: idToIndexType = {}
     initialIdToIndex['newTopic'] = 0
     //TODO - this needs the order of ids also
@@ -196,7 +197,7 @@ const buildNoteOrderForTopic = (state: NotesState, activeTopic: NoteDocType): Re
         const topicPositionId = `${topic.id}_topic`
         memo.indexToId.push(topicPositionId)
         memo.idToIndex[topicPositionId] = memo.indexToId.length - 1
-        if (activeTopic.id === topic.id) {
+        if (activeTopic?.id === topic.id) {
             memo = traverseChildren(state, topic, memo)
         }
         return memo
@@ -259,7 +260,7 @@ const updateTopic = (state: NotesState, newTopic: string) => {
     if (state.currentNoteTopic !== newTopic) {
         state.currentNoteTopic = newTopic
         const currentNoteTopicDoc = state.notesById[newTopic]
-        state.renderOrder = buildNoteOrderForTopic(state, currentNoteTopicDoc)
+        state.renderOrder = buildNoteOrder(state, currentNoteTopicDoc)
         state.cursorPosition = state.renderOrder.idToIndex[`${newTopic}_topic`]
     }
 }
@@ -515,7 +516,7 @@ export const noteSlice = createAppSlice({
 
                     //re-calculate the render order in the current topic
                     if (state.currentNoteTopic) {
-                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                        state.renderOrder = buildNoteOrder(state, state.notesById[state.currentNoteTopic])
                     }
                 },
                 rejected: (state) => {
@@ -585,7 +586,7 @@ export const noteSlice = createAppSlice({
                     //re-calculate the render order in the current topic
                     //The cursor should not move but we should recalculate the order any way so position ids stay in sync.
                     if (state.currentNoteTopic) {
-                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                        state.renderOrder = buildNoteOrder(state, state.notesById[state.currentNoteTopic])
                     }
                 },
                 rejected: (state) => {
@@ -661,7 +662,7 @@ export const noteSlice = createAppSlice({
                     state.notesById = newNotesById
                     //re-calculate the render order in the current topic
                     if (state.currentNoteTopic) {
-                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                        state.renderOrder = buildNoteOrder(state, state.notesById[state.currentNoteTopic])
                     }
                 },
                 rejected: (state) => {
@@ -687,7 +688,7 @@ export const noteSlice = createAppSlice({
                     //TODO - add created and updated at and sort by that. Later other things
                     state.noteTopics.unshift(newTopic)
                     state.currentNoteTopic = newTopic.id
-                    state.renderOrder = buildNoteOrderForTopic(state, newTopic)
+                    state.renderOrder = buildNoteOrder(state, newTopic)
 
                     state.noteChildrenByParentId[newTopic.id] = []
                 },
@@ -772,7 +773,7 @@ export const noteSlice = createAppSlice({
 
                     //re-calculate the render order in the current topic
                     if (state.currentNoteTopic) {
-                        state.renderOrder = buildNoteOrderForTopic(state, state.notesById[state.currentNoteTopic])
+                        state.renderOrder = buildNoteOrder(state, state.notesById[state.currentNoteTopic])
                     }
                     state.status = 'idle'
                 },
@@ -784,6 +785,7 @@ export const noteSlice = createAppSlice({
         updateNoteText: create.asyncThunk<{ noteId: string; text: string }, { noteId: string; text: string }>(
             async (payload) => {
                 // TODO - consider debouncing, tracking note text in component with usestate and debouncing there then making this synchronous again etc.
+                //debounce(() => rxdbInsertOrUpdateNote({ id: payload.noteId, text: payload.text }), 50)
                 rxdbInsertOrUpdateNote({ id: payload.noteId, text: payload.text })
                 return payload
             },
@@ -904,6 +906,11 @@ export const noteSlice = createAppSlice({
                     state.noteRelationsById = noteRelationsById
                     state.noteChildrenByParentId = noteChildrenByParentId
                     state.noteTopics = noteTopics as NoteDocType[]
+                    if (state.currentNoteTopic === null) {
+                        state.renderOrder = buildNoteOrder(state, null)
+                    } else {
+                        state.renderOrder = buildNoteOrder(state, state.notesById[state.currentNoteTopic])
+                    }
                 },
                 rejected: (state) => {
                     state.status = 'failed'
@@ -939,6 +946,11 @@ export const noteSlice = createAppSlice({
                     state.noteRelationsById = noteRelationsById
                     state.noteChildrenByParentId = noteChildrenByParentId
                     state.noteTopics = noteTopics as NoteDocType[]
+                    if (state.currentNoteTopic === null) {
+                        state.renderOrder = buildNoteOrder(state, null)
+                    } else {
+                        state.renderOrder = buildNoteOrder(state, state.notesById[state.currentNoteTopic])
+                    }
                 },
                 rejected: (state) => {
                     state.status = 'failed'
