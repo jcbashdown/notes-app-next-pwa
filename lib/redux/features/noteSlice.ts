@@ -5,6 +5,7 @@
  */
 
 import cloneDeep from 'lodash/cloneDeep'
+import debounce from 'lodash/debounce'
 import { type PayloadAction } from '@reduxjs/toolkit'
 //import { ulid } from '@/lib/helpers/ulid'
 import { ulid } from 'ulid'
@@ -784,6 +785,7 @@ export const noteSlice = createAppSlice({
         updateNoteText: create.asyncThunk<{ noteId: string; text: string }, { noteId: string; text: string }>(
             async (payload) => {
                 // TODO - consider debouncing, tracking note text in component with usestate and debouncing there then making this synchronous again etc.
+                //debounce(() => rxdbInsertOrUpdateNote({ id: payload.noteId, text: payload.text }), 50)
                 rxdbInsertOrUpdateNote({ id: payload.noteId, text: payload.text })
                 return payload
             },
